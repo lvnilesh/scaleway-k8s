@@ -1,0 +1,53 @@
+---
+- name: Docker installation for Ubuntu distribution
+  block:
+
+  - name: Update all packages to the latest version
+    apt:
+      upgrade: dist
+
+  - name: Ensure docker packages are not present
+    apt:
+      state: absent
+      name: "{{ item }}"
+    with_items:
+      - docker
+      - docker-engine
+      - docker.io
+
+  - name: Install package for Docker.io https Docker repository
+    apt:
+      state: latest
+      name: "{{ item }}"
+    with_items:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - software-properties-common
+
+  - name: Adding Docker official gpg key
+    apt_key:
+      url: "{{ docker_apt_key }}"
+      state: present
+
+  - name: Setting Docker repository depending on arch
+    set_fact:
+      docker_repository: "deb [arch={{ item.apt_arch }}] {{ docker_apt_repository }} {{ ansible_distribution_release }} {{ docker_apt_channel }}"
+    when: ansible_architecture == "{{ item.system_arch }}"
+    with_items:
+      - { system_arch: 'x86_64', apt_arch: 'amd64' }
+      - { system_arch: 'arm', apt_arch: 'armhf' }
+
+  - name: Printing Docker repository
+    debug:
+      var: docker_repository
+
+  - name: Adding Docker repository
+    apt_repository:
+      repo: "{{ docker_repository }}"
+      state: present
+      filename: 'docker'
+
+
+  when: ansible_distribution == "Ubuntu"
+    
