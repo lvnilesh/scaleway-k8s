@@ -48,6 +48,10 @@
       state: present
       filename: 'docker'
 
+  - name: Install docker-ce
+    apt:
+      name: docker-ce
+      state: latest
+      update_cache: yes
 
   when: ansible_distribution == "Ubuntu"
-    
