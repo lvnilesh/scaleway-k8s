@@ -33,7 +33,7 @@
   - name: Setting Docker repository depending on arch
     set_fact:
       docker_repository: "deb [arch={{ item.apt_arch }}] {{ docker_apt_repository }} {{ ansible_distribution_release }} {{ docker_apt_channel }}"
-    when: ansible_architecture == "{{ item.system_arch }}"
+    when: ansible_architecture == item.system_arch
     with_items:
       - { system_arch: 'x86_64', apt_arch: 'amd64' }
       - { system_arch: 'arm', apt_arch: 'armhf' }
@@ -53,5 +53,13 @@
       name: docker-ce
       state: latest
       update_cache: yes
+
+  - name: Getting Docker version
+    shell: "docker --version"
+    register: docker_version
+
+  - name: Printing Docker version
+    debug:
+      var: docker_version
 
   when: ansible_distribution == "Ubuntu"
