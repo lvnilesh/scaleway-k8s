@@ -1,5 +1,5 @@
 ---
-- hosts: masters:workers
+- hosts: proxy:masters:workers
   roles:
     - common
     - docker

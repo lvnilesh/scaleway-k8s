@@ -2,6 +2,8 @@ Terraform Scaleaway
 ===================
 
 ```
+export SCALEWAY_TOKEN=<your-access-key>  
+export SCALEWAY_ORGANIZATION=<your-organization-key>  
 # terraform init
 # terraform plan
 # terraform apply

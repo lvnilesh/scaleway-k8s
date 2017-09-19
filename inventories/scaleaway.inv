@@ -1,3 +1,0 @@
-[masters]
-51.15.214.245 ansible_user=root
-[workers]

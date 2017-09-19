@@ -1,0 +1,14 @@
+- name: Squid for Ubuntu server
+  block:
+
+  - name: Install squid on the proxy server
+    apt:
+      name: squid3
+      state: lastest
+
+  - name: Ensure squid is stopped
+    systemd:
+      name: squid
+      state: stopped
+
+  when: ansible_distribution == "Ubuntu"
