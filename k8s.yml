@@ -1,5 +1,23 @@
 ---
+# Setting up all hosts
 - hosts: proxy:masters:workers
+  tasks: [ ]
+
+# Proxy has public ip
+- hosts: proxy
   roles:
-    - common
-    - docker
+    - iptables
+
+- hosts: proxy
+  tasks:
+    - meta: flush_handlers
+
+- hosts: proxy
+  roles:
+    - squid 
+
+# Masters and workers have private ips
+#- hosts: proxy:masters:workers
+#  roles:
+#    - common
+#    - docker

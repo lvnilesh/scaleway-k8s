@@ -1,0 +1,10 @@
+# where the ingress controller(s) runs
+[proxy]
+51.15.214.245 ansible_user=root
+# where the workers node(s) runs
+[workers]
+10.2.74.9 ansible_user=root
+10.4.174.81 ansible_user=root
+# where the master node(s) runs
+[masters]
+10.4.0.15 ansible_user=root
