@@ -25,10 +25,19 @@
       - curl
       - software-properties-common
 
-  - name: Adding Docker official gpg key
+  - name: Adding Docker official gpg key (without proxy)
     apt_key:
       url: "{{ docker_apt_key }}"
       state: present
+    when: "'proxy' in group_names"
+
+  - name: Adding Docker official gpg key (with proxy)
+    apt_key:
+      url: "{{ docker_apt_key }}"
+      state: present
+    environment: 
+      https_proxy: "http://{{ hostvars[groups['proxy'][0]]['ansible_eth0']['ipv4']['address'] }}:8888"
+    when: "'workers' in group_names or 'masters' in group_names" 
 
   - name: Setting Docker repository depending on arch
     set_fact:

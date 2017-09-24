@@ -20,10 +20,10 @@
 -A INPUT -p tcp -m tcp --dport 443 -j ACCEPT
 -A INPUT -p tcp -m tcp --dport 80 -j ACCEPT
 {% for host in groups['masters'] %}
--A INPUT -p tcp -m tcp --dport 3128 -s {{ hostvars[host]['access_ip'] | default(hostvars[host]['ansible_default_ipv4']['address']) }}  -j ACCEPT
+-A INPUT -p tcp -m tcp --dport {{ proxy_port }} -s {{ hostvars[host]['access_ip'] | default(hostvars[host]['ansible_default_ipv4']['address']) }}  -j ACCEPT
 {% endfor %}
 {% for host in groups['workers'] %}
--A INPUT -p tcp -m tcp --dport 3128 -s {{ hostvars[host]['access_ip'] | default(hostvars[host]['ansible_default_ipv4']['address']) }}  -j ACCEPT
+-A INPUT -p tcp -m tcp --dport {{ proxy_port }} -s {{ hostvars[host]['access_ip'] | default(hostvars[host]['ansible_default_ipv4']['address']) }}  -j ACCEPT
 {% endfor %}
 -A OUTPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
 -A OUTPUT -p icmp -j ACCEPT 
