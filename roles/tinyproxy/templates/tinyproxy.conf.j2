@@ -28,7 +28,11 @@ Port 8888
 # interfaces present.
 #
 #Listen 192.168.0.1
+{% if ansible_tun0 is defined %}
+Listen {{ ansible_tun0.ipv4.address }}
+{% else %}
 Listen {{ansible_eth0.ipv4.address}}
+{% endif %}
 
 #
 # Bind: This allows you to specify which interface will be used for
@@ -212,9 +216,10 @@ Allow 127.0.0.1
 # Allow master and workers
 {% for host in groups['masters'] %}
 Allow {{ hostvars[host]['access_ip'] | default(hostvars[host]['ansible_default_ipv4']['address']) }} 
+Allow {{ hostvars[host]['vpn_ip'] }}
 {% endfor %}
 {% for host in groups['workers'] %}
-Allow {{ hostvars[host]['access_ip'] | default(hostvars[host]['ansible_default_ipv4']['address']) }}
+Allow {{ hostvars[host]['vpn_ip'] }}
 {% endfor %}
 #Allow 192.168.0.0/16
 #Allow 172.16.0.0/12

@@ -27,13 +27,27 @@
   roles:
     - apt-proxy
 
-# Setting mesh vpm using tinc
+# Setting mesh vpn using tinc
 - hosts: proxy:masters:workers
   roles:
     - tinc
 
-# Masters and workers have private ips
-#- hosts: proxy:masters:workers
-#  roles:
-#    - common
-#    - docker
+# Proxy is now listening on tinc ip
+- hosts: proxy
+  roles:
+    - tinyproxy
+
+- hosts: proxy
+  tasks:
+    - meta: flush_handlers
+
+# Apt proxy now should use tinc ip
+- hosts: masters:workers
+  roles:
+    - apt-proxy
+
+# Ready to install docker
+- hosts: proxy:masters:workers
+  roles:
+    - common
+    - docker
