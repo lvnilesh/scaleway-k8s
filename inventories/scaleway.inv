@@ -1,10 +1,10 @@
 # where the ingress controller(s) runs
 [proxy]
-51.15.214.245 ansible_user=root
+proxy0 ansible_host=51.15.214.245 ansible_user=root vpn_ip=192.168.66.1
 # where the workers node(s) runs
 [workers]
-10.4.6.143 ansible_user=root
-10.2.11.207 ansible_user=root
+worker0 ansible_host=10.2.100.209  ansible_user=root vpn_ip=192.168.66.2
+worker1 ansible_host=10.2.169.87   ansible_user=root vpn_ip=192.168.66.3 
 # where the master node(s) runs
 [masters]
-10.4.55.147 ansible_user=root
+master1 ansible_host=10.2.166.157  ansible_user=root vpn_ip=192.168.66.4

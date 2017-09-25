@@ -27,8 +27,13 @@
   roles:
     - apt-proxy
 
-# Masters and workers have private ips
+# Setting mesh vpm using tinc
 - hosts: proxy:masters:workers
   roles:
-    - common
-    - docker
+    - tinc
+
+# Masters and workers have private ips
+#- hosts: proxy:masters:workers
+#  roles:
+#    - common
+#    - docker

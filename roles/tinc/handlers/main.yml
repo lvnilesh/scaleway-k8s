@@ -1,0 +1,10 @@
+---
+- name: restart tinc
+  systemd:
+    name: tinc
+    state: restarted
+
+- name: reload tinc
+  systemd:
+    name: tinc
+    state: reloaded
