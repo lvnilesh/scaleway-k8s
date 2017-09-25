@@ -63,6 +63,28 @@
       state: latest
       update_cache: yes
 
+  - name: Fixing systemd unit for Docker config file
+    template:
+      src: docker.service.j2
+      dest: /lib/systemd/system/docker.service
+    notify:
+      - reload systemd
+    when: "'workers' in group_names or 'masters' in group_names" 
+
+  - name: Flushing handlers
+    meta: flush_handlers
+    when: "'workers' in group_names or 'masters' in group_names" 
+
+  - name: Templating /etc/docker/daemon.json
+    template:
+      src: daemon.json.j2
+      dest: /etc/docker/daemon.json
+    notify:
+      - restart docker
+
+  - name: Flushing handlers 2
+    meta: flush_handlers
+
   - name: Getting Docker version
     shell: "docker --version"
     register: docker_version
