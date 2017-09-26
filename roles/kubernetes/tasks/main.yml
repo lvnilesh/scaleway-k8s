@@ -1,0 +1,42 @@
+---
+- name: Kubernetes installation
+  block:
+
+  - name: Adding Kubernetes official gpg key (without proxy)
+    apt_key:
+      url: "{{ kubernetes_apt_key }}"
+      state: present
+    when: "'proxy' in group_names"
+
+  - name: Adding Kubernetes official gpg key (with proxy)
+    apt_key:
+      url: "{{ kubernetes_apt_key }}"
+      state: present
+    environment:
+      https_proxy: "http://{{ hostvars[groups['proxy'][0]]['ansible_tun0']['ipv4']['address'] }}:8888"
+    when: "'workers' in group_names or 'masters' in group_names"
+
+  - name: Setting Kubernetes repository depending Ubuntu version
+    set_fact:
+      kubernetes_repository: "deb http://apt.kubernetes.io/ kubernetes-{{ kubernetes_release }} {{ kubernetes_apt_channel }}"
+
+  - name: Checking Kubernetes repostiory
+    debug: var=kubernetes_repository
+
+  - name: Adding Kubernetes repository
+    apt_repository:
+      repo: "{{ kubernetes_repository }}"
+      state: present
+      filename: 'kubernetes'
+
+  - name: Installing kubernetes core components (kubectl, kubelet ...)
+    apt:
+      name: "{{ item }}"
+      state: latest
+    with_items:
+      - kubelet
+      - kubeadm
+      - kubectl
+      - kubernetes-cin
+
+  when: ansible_distribution == "Ubuntu"

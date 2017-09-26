@@ -1,0 +1,4 @@
+---
+kubernetes_apt_key: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+kubernetes_apt_channel: main
+kubernetes_release: xenial-unstable
