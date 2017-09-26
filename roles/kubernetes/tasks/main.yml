@@ -39,40 +39,83 @@
       - kubectl
       - kubernetes-cni
 
-   - name: Checking if first master was initialized
-     stat: /etc/kubernetes
-     register: kubernetes_directory
-     when: inventory_hostname == groups["masters"][0]
+  - name: Checking if first master was initialized
+    stat:
+      path: /etc/kubernetes
+    register: kubernetes_directory
+    when: inventory_hostname == groups["masters"][0]
 
-   - name: Kubeadm init on first master
-     shell: "kubeadm init --apiserver-advertise-address={{ vpn_ip }} --pod-network-cidr={{ calico-cidr }} --kubernetes-version {{ kubernetes_version}}"
-     when:
-       - kubenetes_directory.stat.exists == False
-       - inventory_hostname == groups["masters"][0]
+  - name: Kubeadm init on first master
+    shell: "kubeadm init --apiserver-advertise-address={{ vpn_ip }} --pod-network-cidr={{ calico_cidr }} --kubernetes-version {{ kubernetes_version }}"
+    when:
+      - inventory_hostname == groups["masters"][0]
+      - kubernetes_directory.stat.exists == False
 
-   - name: Creating .kube file in $HOME
-     file:
-       path: ~/.kube
-       state: directory
-     when:
-       - inventory_hostname == groups["masters"][0]
+  - name: Creating .kube file in $HOME
+    file:
+      path: ~/.kube
+      state: directory
+    when:
+      - inventory_hostname == groups["masters"][0]
 
-   - name: Copying /etc/kubernetes/admin.conf to ~/.kube/config
-     copy:
-       src: /etc/kubernetes/admin.conf
-       dest: ~/.kube/config
-     when:
-       - inventory_hostname == groups["masters"][0]
+  - name: Copying /etc/kubernetes/admin.conf to ~/.kube/config
+    copy:
+      src: /etc/kubernetes/admin.conf
+      dest: ~/.kube/config
+      remote_src: yes
+    when:
+      - inventory_hostname == groups["masters"][0]
 
-   - name: Running first kubectl
-     shell: "kubectl get nodes"
-     register: first_kubectl
-     when:
-       - inventory_hostname == groups["masters"][0]
+  - name: Running first kubectl
+    shell: "kubectl get nodes"
+    register: first_kubectl
+    when:
+      - inventory_hostname == groups["masters"][0]
 
-   - name: Checking kubectl
-     debug: var=kubectl
-     when:
-       - inventory_hostname == groups["masters"][0]
+  - name: Checking kubectl
+    debug: var=first_kubectl
+    when:
+      - inventory_hostname == groups["masters"][0]
+
+  - name: Getting calico manifest
+    get_url:
+      url: "{{ calico_manifest }}"
+      dest: /tmp/calico.yml
+    environment:
+      # calico manifest is downloaded via http
+      http_proxy: "http://{{ hostvars[groups['proxy'][0]]['ansible_tun0']['ipv4']['address'] }}:8888"
+      https_proxy: "http://{{ hostvars[groups['proxy'][0]]['ansible_tun0']['ipv4']['address'] }}:8888"
+    when:
+      - inventory_hostname == groups["masters"][0]
+
+  - name: Checking if calico deploy exists
+    shell: "kubectl get deploy --namespace=kube-system  calico-policy-controller"
+    ignore_errors: True
+    register: calico_deployment
+    when: inventory_hostname == groups["masters"][0]
+
+  - name: Creating calico
+    shell: "kubectl create -f /tmp/calico.yml"
+    when:
+      - inventory_hostname == groups["masters"][0]
+      - calico_deployment.rc != 0
+
+  - name: Getting token
+    shell: "kubeadm token list | tail -f | awk '{print $1}'"
+    register: token
+    when:
+      - inventory_hostname == groups["masters"][0]
+
+  - name: Checking if kube-proxy is Running
+    shell: "ps -ef | grep [k]ube-proxy"
+    register: kube_proxy_running
+    ignore_errors: True
+    when: inventory_hostname != groups["masters"][0]
+
+  - name: Joining cluster on other nodes
+    shell: "kubeadm join --token={{ hostvars[groups['masters'][0]]['token'].stdout_lines[1] }} {{ hostvars[groups['masters'][0]]['vpn_ip'] }}:{{ kubernetes_port }}"
+    when:
+     - inventory_hostname != groups["masters"][0]
+     - "'/usr/local/bin/kube-proxy' not in kube_proxy_running.stdout"
 
   when: ansible_distribution == "Ubuntu"
