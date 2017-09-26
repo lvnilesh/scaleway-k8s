@@ -1,6 +1,10 @@
 - name: tinc
   block:
 
+  - name: get swc server id
+    shell: "/usr/local/bin/scw-metadata | awk -F \"=\" '$1 == \"ID\" {print $2}'"
+    register: scw_id
+
   - name: install tinc
     apt:
       name: tinc
@@ -45,7 +49,7 @@
   - name: ensure tinc hosts file binds to physical ip address
     lineinfile:
       dest: /etc/tinc/{{ netname }}/hosts/{{ inventory_hostname }}
-      line: "Address = {{ physical_ip }}"
+      line: "Address = {{ scw_id.stdout }}.{{ scw_private_domain }}"
       create: yes
     notify:
       - restart tinc
