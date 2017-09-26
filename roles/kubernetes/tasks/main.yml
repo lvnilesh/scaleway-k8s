@@ -37,6 +37,42 @@
       - kubelet
       - kubeadm
       - kubectl
-      - kubernetes-cin
+      - kubernetes-cni
+
+   - name: Checking if first master was initialized
+     stat: /etc/kubernetes
+     register: kubernetes_directory
+     when: inventory_hostname == groups["masters"][0]
+
+   - name: Kubeadm init on first master
+     shell: "kubeadm init --apiserver-advertise-address={{ vpn_ip }} --pod-network-cidr={{ calico-cidr }} --kubernetes-version {{ kubernetes_version}}"
+     when:
+       - kubenetes_directory.stat.exists == False
+       - inventory_hostname == groups["masters"][0]
+
+   - name: Creating .kube file in $HOME
+     file:
+       path: ~/.kube
+       state: directory
+     when:
+       - inventory_hostname == groups["masters"][0]
+
+   - name: Copying /etc/kubernetes/admin.conf to ~/.kube/config
+     copy:
+       src: /etc/kubernetes/admin.conf
+       dest: ~/.kube/config
+     when:
+       - inventory_hostname == groups["masters"][0]
+
+   - name: Running first kubectl
+     shell: "kubectl get nodes"
+     register: first_kubectl
+     when:
+       - inventory_hostname == groups["masters"][0]
+
+   - name: Checking kubectl
+     debug: var=kubectl
+     when:
+       - inventory_hostname == groups["masters"][0]
 
   when: ansible_distribution == "Ubuntu"
