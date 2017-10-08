@@ -6,7 +6,7 @@ metadata:
     k8s-app: default-http-backend
   namespace: kube-system
 spec:
-  replicas: 1
+  replicas: {{ replicas_default_backend }} 
   template:
     metadata:
       labels:
@@ -18,7 +18,7 @@ spec:
         # Any image is permissable as long as:
         # 1. It serves a 404 page at /
         # 2. It serves 200 on a /healthz endpoint
-        image: gcr.io/google_containers/defaultbackend:1.0
+        image: {{ image_default_backend }}:{{ version_default_backend }}
         livenessProbe:
           httpGet:
             path: /healthz

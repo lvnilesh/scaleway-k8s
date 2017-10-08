@@ -26,7 +26,7 @@ spec:
       # CNI and hostPort does not work using hostNetwork
       hostNetwork: true
       containers:
-      - image: gcr.io/google_containers/nginx-ingress-controller:0.9.0-beta.13
+      - image: {{ nginx_ingress_controller_image }}:{{ nginx_ingress_controller_version }}
         name: nginx-ingress-controller
         readinessProbe:
           httpGet:
@@ -60,5 +60,6 @@ spec:
         - --default-backend-service=$(POD_NAMESPACE)/default-http-backend
         - --configmap=$(POD_NAMESPACE)/nginx-ingress-cfg
       nodeSelector:
+        # node must be labelled with roles=ingress-controller
         role: ingress-controller
        

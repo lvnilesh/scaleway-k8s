@@ -1,1 +1,5 @@
-ingress_image:
+replicas_default_backend: 1
+image_default_backend: gcr.io/google_containers/defaultbackend
+version_default_backend: 1.0
+nginx_ingress_controller_image: gcr.io/google_containers/nginx-ingress-controller
+nginx_ingress_controller_version: 0.9.0-beta.13
