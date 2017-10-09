@@ -52,3 +52,8 @@
     - common
     - docker
     - kubernetes
+
+# Deploying ingress controller
+- hosts: masters
+  roles:
+    - ingress

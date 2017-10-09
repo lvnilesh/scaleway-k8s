@@ -33,7 +33,7 @@
 
 - name: nginx_ingress_controller | Removing manifest
   file:
-    src: "/tmp/{{ item }}"
+    path: "/tmp/{{ item }}"
     state: absent
   with_items:
     - default-backend-controller.yml
