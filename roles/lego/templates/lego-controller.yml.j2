@@ -42,3 +42,7 @@ spec:
             port: 8080
           initialDelaySeconds: 5
           timeoutSeconds: 1
+      nodeSelector:
+        # node must be labelled with roles=ingress-controller
+        role: ingress-controller
+
