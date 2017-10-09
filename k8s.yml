@@ -53,7 +53,8 @@
     - docker
     - kubernetes
 
-# Deploying ingress controller
+# Deploying ingress controller and lego
 - hosts: masters
   roles:
     - ingress
+    - lego
