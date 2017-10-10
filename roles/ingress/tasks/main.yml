@@ -1,4 +1,21 @@
 ---
+- name: nginx_ingress_controller | Getting node labels
+  command: "kubectl get nodes -l role=ingress-controller"
+  register: nodes
+  when: inventory_hostname == groups["masters"][0]
+
+- name: nginx_ingress_controller | Printing nodes
+  debug: var=nodes
+  when: inventory_hostname == groups["masters"][0]
+
+- name: nginx_ingress_controller | Labelling proxy nodes with role=ingress_controller
+  command: "kubectl label node {{ item }} role=ingress-controller"
+  with_items:
+    - "{{ groups['proxy'] }}"
+  when:
+    - inventory_hostname == groups["masters"][0]
+    - '"{{ item }}" not in nodes.stdout'
+
 - name: nginx_ingress_controller | Templating manifests
   template: 
     src: "{{ item }}"
@@ -46,3 +63,43 @@
     - nginx-ingress-service.yml
   when: inventory_hostname == groups["masters"][0]
 
+# this runs keepalived on proxy nodes
+- name: nginx_ingress_controller | Templating keepalived on proxy node
+  template:
+    src: keepalived.yml.j2
+    dest: /etc/kubernetes/manifests/keepalived.yml
+  when:
+    - "'proxy' in group_names"
+    - "{{ groups['proxy'] | length | version_compare('1', 'gt') }}"
+
+# scw command line does not allow you to attach/detach proxy ip
+
+#- name: nginx_ingress_controller | Installing go on proxy node (needed for scw)
+#  apt:
+#    name: "golang"
+#    state: latest 
+#  when:
+#    - "'proxy' in group_names"
+
+#- name: nginx_ingress_controller | Creating GOPATH
+#  file:
+#    path: /usr/local/share/go
+#    state: directory
+#  when:
+#    - "'proxy' in group_names"
+
+#- name: nginx_ingress_controller | Getting scw
+#  command: "/usr/bin/go get -u github.com/scaleway/scaleway-cli/cmd/scw"
+#  environment:
+#    GOPATH: "/usr/local/share/go"
+#    GO15VENDOREXPERIMENT: 1
+#  when:
+#    - "'proxy' in group_names"
+
+#- name: nginx_ingress_controller | Configuring scw
+#  template:
+#    src: scwrc.j2
+#    dest: /root/.scwrc
+#    mode: 0600
+#  when:
+#    - "'proxy' in group_names"

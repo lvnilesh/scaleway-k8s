@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: keepalived
+  namespace: kube-system
+spec:
+  hostNetwork: true
+  containers:
+  - name: keepalived
+    image: osixia/keepalived:latest
+    securityContext:
+      capabilities:
+        add:
+          - NET_ADMIN
+    env:
+      - name: KEEPALIVED_INTERFACE
+        value: tun0
+      - name: KEEPALIVED_UNICAST_PEERS
+        value: "#PYTHON2BASH:[{{ groups['proxy'] | map('extract', hostvars, ['vpn_ip']) | join(',') }}]"
+      - name: KEEPALIVED_VIRTUAL_IPS
+        value: "#PYTHON2BASH:['{{ keepalived_ip }}']"
+      - name: KEEPALIVED_PRIORITY
+        value: "{{ groups['proxy'].index(inventory_hostname) }}"
+

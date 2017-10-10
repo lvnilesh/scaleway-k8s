@@ -54,7 +54,7 @@
     - kubernetes
 
 # Deploying ingress controller and lego
-- hosts: masters
+- hosts: masters:proxy
   roles:
     - ingress
     - lego
