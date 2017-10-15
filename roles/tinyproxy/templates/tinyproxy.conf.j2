@@ -215,10 +215,12 @@ MaxRequestsPerChild 0
 Allow 127.0.0.1
 # Allow master and workers
 {% for host in groups['masters'] %}
-Allow {{ hostvars[host]['access_ip'] | default(hostvars[host]['ansible_default_ipv4']['address']) }} 
 Allow {{ hostvars[host]['vpn_ip'] }}
 {% endfor %}
 {% for host in groups['workers'] %}
+Allow {{ hostvars[host]['vpn_ip'] }}
+{% endfor %}
+{% for host in groups['proxy'] %}
 Allow {{ hostvars[host]['vpn_ip'] }}
 {% endfor %}
 #Allow 192.168.0.0/16

@@ -17,7 +17,7 @@
     - '"{{ item }}" not in nodes.stdout'
 
 - name: nginx_ingress_controller | Templating manifests
-  template: 
+  template:
     src: "{{ item }}"
     dest: "/tmp/{{ item | regex_replace('.j2', '') }}"
   with_items:
@@ -63,11 +63,37 @@
     - nginx-ingress-service.yml
   when: inventory_hostname == groups["masters"][0]
 
+- name: nginx_ingress_controller | Creating directory for scaleway-ipmove
+  file:
+    path: /usr/local/bin/scaleway-ipmove
+    state: directory
+  when: "'proxy' in group_names"
+
+- name: nginx_ingress_controller | Getting scaleway-ipmove.py
+  git:
+    repo: https://github.com/chmod666org/scaleway-ipmove
+    dest: /usr/local/bin/scaleway-ipmove
+    force: yes
+  environment:
+    https_proxy: "http://{{ hostvars[groups['proxy'][0]]['ansible_tun0']['ipv4']['address'] }}:8888"
+  when: "'proxy' in group_names"
+
+- name: nginx_ingress_controller | notify.sh
+  template:
+    src: notify.sh.j2
+    dest: /usr/local/bin/scaleway-ipmove/notify.sh
+    mode: 0500
+    owner: root
+    group: root
+  when: "'proxy' in group_names"
+
 # this runs keepalived on proxy nodes
 - name: nginx_ingress_controller | Templating keepalived on proxy node
   template:
-    src: keepalived.yml.j2
-    dest: /etc/kubernetes/manifests/keepalived.yml
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+  with_items:
+    - { 'src': 'keepalived.yml.j2', 'dest': '/etc/kubernetes/manifests/keepalived.yml' }
   when:
     - "'proxy' in group_names"
     - "{{ groups['proxy'] | length | version_compare('1', 'gt') }}"
@@ -77,7 +103,7 @@
 #- name: nginx_ingress_controller | Installing go on proxy node (needed for scw)
 #  apt:
 #    name: "golang"
-#    state: latest 
+#    state: latest
 #  when:
 #    - "'proxy' in group_names"
 

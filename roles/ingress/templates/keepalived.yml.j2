@@ -5,9 +5,16 @@ metadata:
   namespace: kube-system
 spec:
   hostNetwork: true
+  volumes:
+    - hostPath:
+        path: /usr/local/bin/scaleway-ipmove/
+      name: scaleway-moveip
   containers:
   - name: keepalived
-    image: osixia/keepalived:latest
+    image: chmod666/keepalived:latest
+    volumeMounts:
+      - mountPath: "/mnt"
+        name: scaleway-moveip
     securityContext:
       capabilities:
         add:
@@ -16,9 +23,10 @@ spec:
       - name: KEEPALIVED_INTERFACE
         value: tun0
       - name: KEEPALIVED_UNICAST_PEERS
-        value: "#PYTHON2BASH:[{{ groups['proxy'] | map('extract', hostvars, ['vpn_ip']) | join(',') }}]"
+        value: "#PYTHON2BASH:['{{ groups['proxy'] | map('extract', hostvars, ['vpn_ip']) | join("', '") }}']"
       - name: KEEPALIVED_VIRTUAL_IPS
         value: "#PYTHON2BASH:['{{ keepalived_ip }}']"
       - name: KEEPALIVED_PRIORITY
-        value: "{{ groups['proxy'].index(inventory_hostname) }}"
-
+        value: "{{ groups['proxy'].index(inventory_hostname) + 1 }}"
+      - name: KEEPALIVED_NOTIFY
+        value: "/mnt/notify.sh"
