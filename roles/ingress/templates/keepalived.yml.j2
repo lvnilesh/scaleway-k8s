@@ -12,6 +12,11 @@ spec:
   containers:
   - name: keepalived
     image: chmod666/keepalived:latest
+    # if tag is latest imagePullPolicy is always
+    # but when keepalived is backup a proxy may have no connection to the internet
+    # to avoid keepalived not starting in that case, we're putting imagePullPolicy: IfNotPresent
+    # assuming the image was already be pulled at cluster creation. Neat.
+    imagePullPolicy: IfNotPresent
     volumeMounts:
       - mountPath: "/mnt"
         name: scaleway-moveip
