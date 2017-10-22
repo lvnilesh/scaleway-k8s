@@ -110,7 +110,7 @@
     shell: "ps -ef | grep [k]ube-proxy"
     register: kube_proxy_running
     ignore_errors: True
-    when: inventory_hostname != groups["masters"][0]
+    when: inventory_hostname != groups["masters"]
 
   - name: Joining cluster on other nodes
     shell: "kubeadm join --token={{ hostvars[groups['masters'][0]]['token'].stdout_lines[1] }} {{ hostvars[groups['masters'][0]]['vpn_ip'] }}:{{ kubernetes_port }}"

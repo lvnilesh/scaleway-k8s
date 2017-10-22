@@ -223,6 +223,15 @@ Allow {{ hostvars[host]['vpn_ip'] }}
 {% for host in groups['proxy'] %}
 Allow {{ hostvars[host]['vpn_ip'] }}
 {% endfor %}
+{% for host in groups['masters'] %}
+Allow {{ hostvars[host]['ansible_host'] }}
+{% endfor %}
+{% for host in groups['workers'] %}
+Allow {{ hostvars[host]['ansible_host'] }}
+{% endfor %}
+{% for host in groups['proxy'] %}
+Allow {{ hostvars[host]['ansible_host'] }}
+{% endfor %}
 #Allow 192.168.0.0/16
 #Allow 172.16.0.0/12
 #Allow 10.0.0.0/8

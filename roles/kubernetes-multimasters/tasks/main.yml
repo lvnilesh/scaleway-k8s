@@ -1,0 +1,35 @@
+---
+- name: kubernetes_multimasters | Creating directories on other masters
+  file:
+    path: "{{ item }}"
+    state: directory
+  when:
+    - inventory_hostname != groups["masters"][0]
+  with_items:
+    - "/etc/systemd/system/kubelet.service.d/"
+    - "/etc/kubernetes"
+    - "/etc/kubernetes/manifests"
+    - "/etc/kubernetes/pki/"
+    - "/var/lib/kubelet/pki"
+    - "/etc/cni/net.d"
+    - "/opt/cni/bin"
+    - "/root/.kube"
+
+- name: kubernetes_multimasters | Creating files on other masterd
+  synchronize:
+    src: "{{ item }}/"
+    dest: "{{ item }}"
+    recursive: yes
+  when:
+    - inventory_hostname != groups["masters"][0]
+  delegate_to: "{{ groups['masters'][0] }}"
+  with_items:
+    - "/etc/systemd/system/kubelet.service.d"
+    - "/etc/kubernetes"
+    - "/etc/kubernetes/manifests"
+    - "/etc/kubernetes/pki"
+    - "/var/lib/kubelet/pki"
+    - "/etc/cni/net.d"
+    - "/opt/cni/bin"
+    - "/root/.kube"
+
