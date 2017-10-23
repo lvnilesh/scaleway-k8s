@@ -1,5 +1,7 @@
 apiVersion: kubeadm.k8s.io/v1alpha1
 kind: MasterConfiguration
+api:
+  advertiseAddress: {{ vpn_ip }}
 etcd:
   endpoints:
 {% for host in groups['masters'] %}
@@ -12,6 +14,9 @@ apiServerCertSANs:
 {% for host in groups['masters'] %}
 - "{{ hostvars[host]['vpn_ip'] }}"
 {% endfor %}
+#{% for host in groups['masters'] %}
+#- "{{ hostvars[host]['ansible_host'] }}"
+#{% endfor %}
 - "{{ api_floating_ip }}"
 - "127.0.0.1"
 token: "{{ hostvars[groups['masters'][0]]['kubeadm_token'].stdout }}"

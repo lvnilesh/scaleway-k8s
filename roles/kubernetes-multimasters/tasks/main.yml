@@ -128,6 +128,15 @@
     - "'masters' in group_names"
     - inventory_hostname != groups["masters"][0]
 
+# fixing kubectl
+- name: kubectl config
+  copy:
+    src: /etc/kubernetes/kubelet.conf
+    dest: /root/.kube/config
+  when
+    - "'masters' in group_names"
+    - inventory_hostname != groups["masters"][0]
+
 # this runs keepalived on proxy nodes
 - name: Running keepalived on master nodes to loadbalance api ip
   template:
@@ -137,6 +146,8 @@
     - { 'src': 'keepalived.yml.j2', 'dest': '/etc/kubernetes/manifests/keepalived.yml' }
   when:
     - "'masters' in group_names"
+
+# wait for keepalived to be up on all master here
 
 - name: Getting token
   shell: "kubeadm token list | tail -f | awk '{print $1}'"
