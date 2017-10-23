@@ -51,15 +51,28 @@
   roles:
     - common
     - docker
+
+# Manual etc when we have more than 1 masters
+- hosts: masters
+  roles:
+    - etcd
+  when:
+    - {{ groups['masters'] | length | compare_version('1', '>')}}
+
+- hosts: proxy:masters:workers
+  roles:
     - kubernetes
+  when:
+    - {{ groups['masters'] | length | compare_version('1', '=')}}
+
+- hosts: proxy:masters:workers
+  roles:
+    - kubernetes-multimasters
+  when:
+    - {{ groups['masters'] | length | compare_version('1', '>')}}
 
 # Deploying ingress controller and lego
 - hosts: masters:proxy
   roles:
     - ingress
     - lego
-
-# Adding masters
-- hosts: masters
-  roles:
-    - kubernetes-multimasters

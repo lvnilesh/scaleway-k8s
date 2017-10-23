@@ -1,0 +1,22 @@
+---
+# Setting up all hosts
+- hosts: proxy:masters:workers
+  tasks: [ ]
+
+# Manual etc when we have more than 1 masters
+- hosts: masters
+  roles:
+    - etcd
+  #when:  "{{ groups['masters'] | length | version_compare('1', '>') }}"
+
+#- hosts: proxy:masters:workers
+#  roles:
+#    - kubernetes
+#  when:
+#    - "{{ groups['masters'] | length | version_compare('1', '=') }}"
+
+- hosts: proxy:masters:workers
+  roles:
+    - kubernetes-multimasters
+#  when:
+#    - "{{ groups['masters'] | length | version_compare('1', '>') }}"
