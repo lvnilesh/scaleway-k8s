@@ -1,35 +1,157 @@
 ---
-- name: kubernetes_multimasters | Creating directories on other masters
+- name: Adding Kubernetes official gpg key (without proxy)
+  apt_key:
+    url: "{{ kubernetes_apt_key }}"
+    state: present
+  when: "'proxy' in group_names"
+
+- name: Adding Kubernetes official gpg key (with proxy)
+  apt_key:
+    url: "{{ kubernetes_apt_key }}"
+    state: present
+  environment:
+    https_proxy: "http://{{ hostvars[groups['proxy'][0]]['ansible_tun0']['ipv4']['address'] }}:8888"
+  when: "'workers' in group_names or 'masters' in group_names"
+
+- name: Setting Kubernetes repository depending Ubuntu version
+  set_fact:
+    kubernetes_repository: "deb http://apt.kubernetes.io/ kubernetes-{{ kubernetes_release }} {{ kubernetes_apt_channel }}"
+
+- name: Checking Kubernetes repostiory
+  debug: var=kubernetes_repository
+
+- name: Adding Kubernetes repository
+  apt_repository:
+    repo: "{{ kubernetes_repository }}"
+    state: present
+    filename: 'kubernetes'
+
+- name: Installing kubernetes core components (kubectl, kubelet ...)
+  apt:
+    name: "{{ item }}"
+    state: latest
+  with_items:
+    - kubelet
+    - kubeadm
+    - kubectl
+    - kubernetes-cni
+
+- name: kubernetes_multimasters | Generating a kubeadm token
+  shell: "kubeadm token generate"
+  register: kubeadm_token
+  when:
+    - inventory_hostname == groups["masters"][0]
+
+- name: kubernetes_multimasters | Creating kubeadm_config file
+  template:
+    src: kubeadm-config.j2
+    dest: /tmp/kubeadm_config
+
+- name: Checking if first master was initialized
+  stat:
+    path: /etc/kubernetes
+  register: kubernetes_directory
+  when: inventory_hostname == groups["masters"][0]
+
+- name: Kubeadm init on first master
+  shell: "kubeadm init --config /tmp/kubeadm_config"
+  when:
+    - inventory_hostname == groups["masters"][0]
+    - kubernetes_directory.stat.exists == False
+
+- name: Creating .kube file in $HOME
   file:
-    path: "{{ item }}"
+    path: ~/.kube
+    state: directory
+
+- name: Copying /etc/kubernetes/admin.conf to ~/.kube/config
+  copy:
+    src: /etc/kubernetes/admin.conf
+    dest: ~/.kube/config
+    remote_src: yes
+  when:
+    - inventory_hostname == groups["masters"][0]
+
+- name: Running first kubectl
+  shell: "kubectl get nodes"
+  register: first_kubectl
+  when:
+    - inventory_hostname == groups["masters"][0]
+
+- name: Checking kubectl
+  debug: var=first_kubectl
+  when:
+    - inventory_hostname == groups["masters"][0]
+
+- name: Getting calico manifest
+  get_url:
+    url: "{{ calico_manifest }}"
+    dest: /tmp/calico.yml
+  environment:
+    # calico manifest is downloaded via http
+    http_proxy: "http://{{ hostvars[groups['proxy'][0]]['ansible_tun0']['ipv4']['address'] }}:8888"
+    https_proxy: "http://{{ hostvars[groups['proxy'][0]]['ansible_tun0']['ipv4']['address'] }}:8888"
+  when:
+    - inventory_hostname == groups["masters"][0]
+
+- name: Checking if calico deploy exists
+  shell: "kubectl get deploy --namespace=kube-system  calico-policy-controller"
+  ignore_errors: True
+  register: calico_deployment
+  when: inventory_hostname == groups["masters"][0]
+
+- name: Creating calico
+  shell: "kubectl create -f /tmp/calico.yml"
+  when:
+    - inventory_hostname == groups["masters"][0]
+    - calico_deployment.rc != 0
+
+- name: Creating /etc/kubernetes to other masters
+  file:
+    path: /etc/kubernetes
     state: directory
   when:
     - inventory_hostname != groups["masters"][0]
-  with_items:
-    - "/etc/systemd/system/kubelet.service.d/"
-    - "/etc/kubernetes"
-    - "/etc/kubernetes/manifests"
-    - "/etc/kubernetes/pki/"
-    - "/var/lib/kubelet/pki"
-    - "/etc/cni/net.d"
-    - "/opt/cni/bin"
-    - "/root/.kube"
 
-- name: kubernetes_multimasters | Creating files on other masterd
+- name: Distribute /etc/kubernetes/pki to other masters
   synchronize:
-    src: "{{ item }}/"
-    dest: "{{ item }}"
-    recursive: yes
+    src: /etc/kubernetes/pki/
+    dest: /etc/kubernetes/pki
   when:
+    - "'masters' in  group_names"
     - inventory_hostname != groups["masters"][0]
-  delegate_to: "{{ groups['masters'][0] }}"
-  with_items:
-    - "/etc/systemd/system/kubelet.service.d"
-    - "/etc/kubernetes"
-    - "/etc/kubernetes/manifests"
-    - "/etc/kubernetes/pki"
-    - "/var/lib/kubelet/pki"
-    - "/etc/cni/net.d"
-    - "/opt/cni/bin"
-    - "/root/.kube"
+  delegate_to: "{{ groups.masters[0] }}"
 
+- name: Initializing other masters
+  shell: "kubeadm init --config /tmp/kubeadm_config"
+  when:
+    - "'masters' in group_names"
+    - inventory_hostname != groups["masters"][0]
+
+# this runs keepalived on proxy nodes
+- name: Running keepalived on master nodes to loadbalance api ip
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+  with_items:
+    - { 'src': 'keepalived.yml.j2', 'dest': '/etc/kubernetes/manifests/keepalived.yml' }
+  when:
+    - "'masters' in group_names"
+
+- name: Getting token
+  shell: "kubeadm token list | tail -f | awk '{print $1}'"
+  register: token
+  when:
+    - inventory_hostname == groups["masters"][0]
+
+- name: Checking if kube-proxy is Running
+  shell: "ps -ef | grep [k]ube-proxy"
+  register: kube_proxy_running
+  ignore_errors: True
+  when: inventory_hostname != groups["masters"]
+
+- name: Joining cluster on other nodes
+  shell: "kubeadm join --token={{ hostvars[groups['masters'][0]]['kubeadm_token'].stdout }} {{ api_floating_ip }}:6443"
+  when:
+   - "'masters' not in group_names"
+   - "'/usr/local/bin/kube-proxy' not in kube_proxy_running.stdout"

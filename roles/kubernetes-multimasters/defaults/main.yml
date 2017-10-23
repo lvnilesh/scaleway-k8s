@@ -1,0 +1,16 @@
+---
+# Kubernetes
+kubernetes_apt_key: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+kubernetes_apt_channel: main
+kubernetes_release: xenial-unstable
+# versions can be found here
+kubernetes_version: v1.9.0-alpha.1
+kubernetes_port: 6443
+
+# Calico
+# these will determine the number of pods you can run
+calico_cidr: 192.168.67.0/24
+calico_manifest: http://docs.projectcalico.org/v2.4/getting-started/kubernetes/installation/hosted/kubeadm/1.6/calico.yaml
+
+# floating balanced ip for k8s api
+api_floating_ip: 192.168.66.253
