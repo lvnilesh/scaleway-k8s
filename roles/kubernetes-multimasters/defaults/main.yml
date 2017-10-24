@@ -14,3 +14,4 @@ calico_manifest: http://docs.projectcalico.org/v2.4/getting-started/kubernetes/i
 
 # floating balanced ip for k8s api
 api_floating_ip: 192.168.66.253
+api_floating_mask: 24

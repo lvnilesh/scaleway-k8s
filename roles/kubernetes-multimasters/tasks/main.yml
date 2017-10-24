@@ -3,7 +3,10 @@
   apt_key:
     url: "{{ kubernetes_apt_key }}"
     state: present
-  when: "'proxy' in group_names"
+  when:
+    # the only node to have an internet access is the first proxy node
+    - "'proxy' in group_names"
+    - inventory_hostname == groups['proxy'][0]
 
 - name: Adding Kubernetes official gpg key (with proxy)
   apt_key:
@@ -11,7 +14,9 @@
     state: present
   environment:
     https_proxy: "http://{{ hostvars[groups['proxy'][0]]['ansible_tun0']['ipv4']['address'] }}:8888"
-  when: "'workers' in group_names or 'masters' in group_names"
+  when:
+    # all the other node do not have an internet access and need to use the proxy
+    - inventory_hostname != groups['proxy'][0]
 
 - name: Setting Kubernetes repository depending Ubuntu version
   set_fact:
@@ -36,33 +41,44 @@
     - kubectl
     - kubernetes-cni
 
-- name: kubernetes_multimasters | Generating a kubeadm token
+# generate a new token for the first masters
+- name: Generating a kubeadm token
   shell: "kubeadm token generate"
   register: kubeadm_token
   when:
     - inventory_hostname == groups["masters"][0]
 
-- name: kubernetes_multimasters | Creating kubeadm_config file
+# generating the kubeadm config file only on master nodes
+- name: Creating kubeadm_config file
   template:
     src: kubeadm-config.j2
     dest: /tmp/kubeadm_config
+  when:
+    - "'masters' in group_names"
 
-- name: Checking if first master was initialized
-  stat:
-    path: /etc/kubernetes
-  register: kubernetes_directory
+# we get kubectl output to check if we have to add the node or not
+# errors are ignore in case of the first initialization on the first master
+- name: Getting kubectl outpout
+  shell: "kubectl get nodes"
+  ignore_errors: True
   when: inventory_hostname == groups["masters"][0]
+  register: kubectl_output
 
 - name: Kubeadm init on first master
   shell: "kubeadm init --config /tmp/kubeadm_config"
   when:
+    # only run this command if this is the fist master
+    # and this one hasn't be initialized
     - inventory_hostname == groups["masters"][0]
-    - kubernetes_directory.stat.exists == False
+    - inventory_hostname not in kubectl_output.stdout
 
 - name: Creating .kube file in $HOME
+  # this will be needed on all masters nodes
   file:
     path: ~/.kube
     state: directory
+  when:
+    - "'masters' in group_names"
 
 - name: Copying /etc/kubernetes/admin.conf to ~/.kube/config
   copy:
@@ -83,6 +99,7 @@
   when:
     - inventory_hostname == groups["masters"][0]
 
+# calico deployement
 - name: Getting calico manifest
   get_url:
     url: "{{ calico_manifest }}"
@@ -118,6 +135,7 @@
     src: /etc/kubernetes/pki/
     dest: /etc/kubernetes/pki
   when:
+    # distribute the pki files on masters that are not the first master
     - "'masters' in  group_names"
     - inventory_hostname != groups["masters"][0]
   delegate_to: "{{ groups.masters[0] }}"
@@ -125,15 +143,20 @@
 - name: Initializing other masters
   shell: "kubeadm init --config /tmp/kubeadm_config"
   when:
+    # this is the master host
     - "'masters' in group_names"
-    - inventory_hostname != groups["masters"][0]
+    # this is not the first master
+    - inventory_hostname != groups['masters'][0]
+    # master hasn't be already initialized
+    - inventory_hostname not in hostvars[groups['masters'][0]]['kubectl_output'].stdout
 
 # fixing kubectl
 - name: kubectl config
   copy:
     src: /etc/kubernetes/kubelet.conf
     dest: /root/.kube/config
-  when
+    remote_src: True
+  when:
     - "'masters' in group_names"
     - inventory_hostname != groups["masters"][0]
 
@@ -147,7 +170,15 @@
   when:
     - "'masters' in group_names"
 
-# wait for keepalived to be up on all master here
+- name: Wait for keepavlied to be alive :-)
+  shell: 'docker ps | grep chmod666/keepalived | grep "Up" | grep "minutes ago"'
+  register: result
+  until: result.stdout.find("chmod666/keepalived") != -1
+  retries: 18
+  delay: 10
+  # keepalived runs on masters nodes
+  when:
+    - "'masters' in group_names"
 
 - name: Getting token
   shell: "kubeadm token list | tail -f | awk '{print $1}'"

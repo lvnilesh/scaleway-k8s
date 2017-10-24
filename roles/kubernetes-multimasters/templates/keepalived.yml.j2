@@ -23,6 +23,6 @@ spec:
       - name: KEEPALIVED_UNICAST_PEERS
         value: "#PYTHON2BASH:['{{ groups['masters'] | map('extract', hostvars, ['vpn_ip']) | join("', '") }}']"
       - name: KEEPALIVED_VIRTUAL_IPS
-        value: "#PYTHON2BASH:['{{ api_floating_ip }}']"
+        value: "#PYTHON2BASH:['{{ api_floating_ip }}/{{ api_floating_mask }}']"
       - name: KEEPALIVED_PRIORITY
         value: "{{ groups['masters'].index(inventory_hostname) + 1 }}"
