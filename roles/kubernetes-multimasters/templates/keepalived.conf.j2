@@ -4,14 +4,14 @@ global_defs {
   {% else %}
   default_interface eth0
   {% endif %}
-  default_interface tun0
+
 }
 
 vrrp_instance VI_1 {
   {% if ansible_tun0 is defined %}
-  interface tun0
+interface tun0
   {% else %}
-  interface eth0
+interface eth0
   {% endif %}
 
   track_interface {
@@ -22,20 +22,20 @@ vrrp_instance VI_1 {
   {% endif %}
   }
 
-  {% if groups['masters'].index(inventory_hostname) == 1 }
-  state MASTER
+  {% if groups['masters'].index(inventory_hostname) == 1 %}
+state MASTER
   {% else %}
-  state BACKUP
-  {% endif %}  
-  virtual_router_id {{ route_id }}
+state BACKUP
+  {% endif %}
+virtual_router_id {{ router_id }}
   priority {{ groups['masters'].index(inventory_hostname) + 100 }}
   nopreempt
 
   unicast_peer {
     {% for host in groups['masters'] %}
-    {{ hostvars[host]['vpn_ip'] }}
+{{ hostvars[host]['vpn_ip'] }}
     {% endfor %}
-  }
+}
 
   virtual_server {{ api_floating_ip }} {{ api_floating_port }} {
       delay_loop 10
@@ -46,8 +46,7 @@ vrrp_instance VI_1 {
       persistence_timeout 7200
 
       {% for host in groups['masters'] %}
-
-      real_server {{ hostvars[host]['vpn_ip'] }} {{ api_floating_port }} {
+real_server {{ hostvars[host]['vpn_ip'] }} {{ api_floating_port }} {
           weight 1
           TCP_CHECK {
             connect_timeout 5
@@ -55,7 +54,7 @@ vrrp_instance VI_1 {
           }
       }
       {% endfor %}
-  }
+}
 
   authentication {
     auth_type PASS

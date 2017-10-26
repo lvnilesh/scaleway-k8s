@@ -16,4 +16,4 @@ calico_manifest: http://docs.projectcalico.org/v2.4/getting-started/kubernetes/i
 api_floating_ip: 192.168.66.253
 api_floating_mask: 24
 api_floating_port: 6443
-router_id: 666
+router_id: 66
