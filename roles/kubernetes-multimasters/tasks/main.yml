@@ -160,6 +160,18 @@
     - "'masters' in group_names"
     - inventory_hostname != groups["masters"][0]
 
+- name: Creating /etc/keepalived on master nodes
+  file:
+    path: /etc/keepalived
+    stated: directory
+  when: "'master in group_names'"
+
+- name: Templating /etc/keepalived/keepalived.conf
+  template:
+    src: keepalived.conf.j2
+    dest: /etc/keepalived/keepalived.conf
+  when: "'masters' in group_names"
+  
 # this runs keepalived on proxy nodes
 - name: Running keepalived on master nodes to loadbalance api ip
   template:
