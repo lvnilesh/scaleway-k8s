@@ -7,16 +7,11 @@
 - hosts: masters
   roles:
     - etcd
-  #when:  "{{ groups['masters'] | length | version_compare('1', '>') }}"
 
-#- hosts: proxy:masters:workers
-#  roles:
-#    - kubernetes
-#  when:
-#    - "{{ groups['masters'] | length | version_compare('1', '=') }}"
+- hosts: proxy:masters:workers
+  roles:
+    - kubernetes
 
 - hosts: proxy:masters:workers
   roles:
     - kubernetes-multimasters
-#  when:
-#    - "{{ groups['masters'] | length | version_compare('1', '>') }}"

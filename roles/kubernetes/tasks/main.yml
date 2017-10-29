@@ -118,4 +118,6 @@
      - inventory_hostname != groups["masters"][0]
      - "'/usr/local/bin/kube-proxy' not in kube_proxy_running.stdout"
 
-  when: ansible_distribution == "Ubuntu"
+  when:
+    - ansible_distribution == "Ubuntu"
+    - groups['masters']|length == 1

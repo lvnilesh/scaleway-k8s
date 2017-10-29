@@ -96,7 +96,7 @@
     - { 'src': 'keepalived.yml.j2', 'dest': '/etc/kubernetes/manifests/keepalived.yml' }
   when:
     - "'proxy' in group_names"
-    - "{{ groups['proxy'] | length | version_compare('1', 'gt') }}"
+    - groups.proxy|length > 1
 
 # scw command line does not allow you to attach/detach proxy ip
 
