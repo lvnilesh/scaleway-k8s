@@ -1,0 +1,37 @@
+- name: gluster | Creating bricks mountpoint
+  file:
+    path: "/data/docker/{{ item }}"
+    state: directory
+  with_items:
+  #  - "{{ dm_create_on.value.holders }}"
+  - "{{ groups.gluster_main[0] }}"
+- name: gluster | Mounting bricks
+  mount:
+    name: "/data/docker/{{ item }}"
+    src: "{{ groups.gluster_main[0] }}:gvol_{{ item }}"
+    fstype: glusterfs
+    opts: "defaults,_netdev"
+    state: mounted
+  with_items:
+  #  - "{{ dm_create_on.value.holders }}"
+  - "{{ groups.gluster_main[0] }}"
+#- name: gluster | Modifying motd header
+#  blockinfile:
+#    block: "{{ lookup('file', 'files/motd_gluster_header') }}"
+#    insertafter: EOF 
+#    dest: "/etc/motd"
+#    marker: no
+#- name: gluster | Modifying motd body
+#  blockinfile:
+#    block: "{{ lookup('template', 'templates/motd_gluster.j2') }}"
+#    insertafter: EOF 
+#    dest: "/etc/motd"
+#    marker: no
+#  with_items:
+#    - "{{ dm_create_on.value.holders }}"
+#- name: gluster | Modifying motd footer 
+#  blockinfile:
+#    block: "{{ lookup('file', 'files/motd_gluster_footer') }}"
+#    insertafter: EOF 
+#    dest: "/etc/motd"
+#    marker: no

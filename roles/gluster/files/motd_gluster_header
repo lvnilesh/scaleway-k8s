@@ -1,0 +1,5 @@
++--------------------------------------------------+
+| Docker persistants data must be stored in one of |
+| the gluster filesystems present in the list      |
+| below:                                           |
++--------------------------------------------------+

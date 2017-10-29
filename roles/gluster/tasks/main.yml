@@ -1,0 +1,7 @@
+---
+  - include: gluster_install.yml
+  - include: preparing_gluster_disks.yml
+  - include: gluster_init.yml
+  - include: gluster_vol_create.yml
+  - include: gluster_vol_mount.yml
+  - include: gluster_motd.yml

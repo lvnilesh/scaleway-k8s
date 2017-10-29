@@ -1,0 +1,9 @@
++--------------------------------------------------+
+| Docker persistant data must be stored in one of  |
+| the gluster filesystems present in the list      |
+| below:                                           |
++--------------------------------------------------+
+{% for item in groups.gluster_main %}
+| - /data/docker/{{ item }}                      |
+{% endfor %}
++--------------------------------------------------+
