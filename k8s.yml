@@ -56,20 +56,18 @@
 - hosts: masters
   roles:
     - etcd
-  when:
-    - {{ groups['masters'] | length | compare_version('1', '>')}}
 
 - hosts: proxy:masters:workers
   roles:
     - kubernetes
-  when:
-    - {{ groups['masters'] | length | compare_version('1', '=')}}
 
 - hosts: proxy:masters:workers
   roles:
     - kubernetes-multimasters
-  when:
-    - {{ groups['masters'] | length | compare_version('1', '>')}}
+
+- hosts: gluster
+  roles:
+    - gluster
 
 # Deploying ingress controller and lego
 - hosts: masters:proxy

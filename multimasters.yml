@@ -1,4 +1,0 @@
-# Adding masters
-- hosts: masters
-  roles:
-    - kubernetes-multimasters

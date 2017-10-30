@@ -1,0 +1,8 @@
+---
+# Setting up all hosts
+- hosts: proxy:masters:workers
+  tasks: [ ]
+
+- hosts: workers
+  roles:
+    - gluster
