@@ -1,16 +1,6 @@
 ---
-- name: gluster | Setup /etc/yum.repos.d for gluster and epel
-  template: src=templates/{{ item.template }} dest=/etc/yum.repos.d/{{ item.name }}
-  with_items:
-    - { name: 'epel-ppc64le.repo', template: 'epel-ppc64le.repo.j2' }
-    - { name: 'gluster-ppc64le.repo', template: 'gluster-ppc64le.repo.j2' }
-
-- name: gluster | yum update/upgrade rhel (enable gluster repo)
-  yum: name=* state=latest
-  when: ansible_os_family == 'RedHat'
-
-- name: gluster | Installing gluster packages
-  yum:
+- name: Installing gluster packages
+  apt:
     name: "{{ item }}"
     state: latest
   with_items:

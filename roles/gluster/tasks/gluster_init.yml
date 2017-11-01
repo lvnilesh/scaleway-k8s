@@ -1,14 +1,15 @@
 ---
-- name: gluster | Ensure gluster service are running
+- name: Ensure gluster service is running
   service:
     name: glusterd
     state: started
 
-- name: gluster | Peer probing
+- name: Peer probing
   shell: "gluster peer probe {{ item }}"
   register: gluster_peer_probe
   changed_when: "'already in peer list' not in gluster_peer_probe.stdout"
   failed_when: false
-  when: "inventory_hostname == groups['gluster_main'][0]"
+  when: "inventory_hostname == groups['gluster'][0]"
   with_items:
-    - "{{ groups.gluster_nodes }}"
+    # all group member except the first one
+    - "{{ groups.gluster | difference['groups['gluster'][0]'] }}"

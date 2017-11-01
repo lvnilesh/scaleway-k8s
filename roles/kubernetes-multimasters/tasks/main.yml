@@ -17,13 +17,49 @@
       - inventory_hostname == groups['masters'][0]
   
   - name: Propagate the key to other masters
-    authorized_keys:
-      key: "{{ hostvars[groups['masters'][0]]['frist_master_key'].stdout }}"
+    authorized_key:
+      key: "{{ hostvars[groups['masters'][0]]['first_master_key'].stdout }}"
       user: root
       state: present
     when:
       - "'masters' in group_names"
       - inventory_hostname != groups['masters'][0]
+
+  - name: Creating /etc/keepalived on master nodes
+    file:
+      path: /etc/keepalived
+      state: directory
+    when: "'master in group_names'"
+
+  - name: Templating /etc/keepalived/keepalived.conf
+    template:
+      src: keepalived.conf.j2
+      dest: /etc/keepalived/keepalived.conf
+    when: "'masters' in group_names"
+
+  - name: Running keepalived container on masters nodes
+    docker_container:
+      name: keepalived_api
+      image: "chmod666/keepalived:latest"
+      state: started
+      detach: True
+      volumes:
+        - /etc/keepalived/keepalived.conf:/usr/local/etc/keepalived/keepalived.conf
+      capabilities:
+        - NET_ADMIN
+      network_mode: host
+      restart_policy: always
+    when: "'masters' in group_names"
+
+  - name: Wait for keepavlied to be alive :-)
+    shell: 'docker ps | grep chmod666/keepalived | grep "Up" | grep "minutes ago"'
+    register: result
+    until: result.stdout.find("chmod666/keepalived") != -1
+    retries: 18
+    delay: 10
+    # keepalived runs on masters nodes
+    when:
+      - "'masters' in group_names"
 
   - name: Adding Kubernetes official gpg key (without proxy)
     apt_key:
@@ -185,38 +221,6 @@
     when:
       - "'masters' in group_names"
       - inventory_hostname != groups["masters"][0]
-
-  - name: Creating /etc/keepalived on master nodes
-    file:
-      path: /etc/keepalived
-      state: directory
-    when: "'master in group_names'"
-
-  - name: Templating /etc/keepalived/keepalived.conf
-    template:
-      src: keepalived.conf.j2
-      dest: /etc/keepalived/keepalived.conf
-    when: "'masters' in group_names"
-
-  # this runs keepalived on proxy nodes
-  - name: Running keepalived on master nodes to loadbalance api ip
-    template:
-      src: "{{ item.src }}"
-      dest: "{{ item.dest }}"
-    with_items:
-      - { 'src': 'keepalived.yml.j2', 'dest': '/etc/kubernetes/manifests/keepalived.yml' }
-    when:
-      - "'masters' in group_names"
-
-  - name: Wait for keepavlied to be alive :-)
-    shell: 'docker ps | grep chmod666/keepalived | grep "Up" | grep "minutes ago"'
-    register: result
-    until: result.stdout.find("chmod666/keepalived") != -1
-    retries: 18
-    delay: 10
-    # keepalived runs on masters nodes
-    when:
-      - "'masters' in group_names"
 
   - name: Getting token
     shell: "kubeadm token list | tail -f | awk '{print $1}'"

@@ -22,13 +22,16 @@ interface eth0
   {% endif %}
   }
 
-  {% if groups['masters'].index(inventory_hostname) == 1 %}
+  {% if groups['masters'].index(inventory_hostname) == 0 %}
 state MASTER
+priority {{ groups['masters'].index(inventory_hostname) + 100 }}
+virtual_router_id {{ router_id }}
   {% else %}
 state BACKUP
+priority {{ groups['masters'].index(inventory_hostname) + 50 }}
+virtual_router_id {{ router_id }}
   {% endif %}
 virtual_router_id {{ router_id }}
-  priority {{ groups['masters'].index(inventory_hostname) + 100 }}
   nopreempt
 
   unicast_peer {
@@ -37,9 +40,10 @@ virtual_router_id {{ router_id }}
     {% endfor %}
 }
 
-  virtual_ipadress {
-    {{ api_floating_ip }}/{{ api_floating_masked }}
+  virtual_ipaddress {
+    {{ api_floating_ip }}/{{ api_floating_mask }}
   }
+
   authentication {
     auth_type PASS
     auth_pass d0cker

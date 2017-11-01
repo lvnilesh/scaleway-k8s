@@ -1,8 +1,6 @@
-gluster_repo: http://gluster-repo.chmod666.org/gluster-ppc64le/
-epel_repo: http://epel-repo.chmod666.org/epel-ppc64le/
 gluster_packages:
   - glusterfs-server
   - userspace-rcu
   - parted
-gluster_disk_size: 600
+gluster_disk_size: 50
 brick_directory: /data/brick

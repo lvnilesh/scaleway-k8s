@@ -7,11 +7,6 @@
   when: item.value.size == "{{ gluster_disk_size }}.00 GB"
   with_dict: "{{ ansible_devices }}"
 
-#- name: gluster | Kpartx new multipath partition (to discover it)
-#  shell: "kpartx -a /dev/mapper/{{ item.value.holders[0] }}"
-#  when: item.value.size == "{{ gluster_disk_size }}.00 GB"
-#  with_dict: "{{ ansible_devices }}"
-
 - name: gluster | Registering multipath partition finding all multipath devices with a primary partition
   set_fact:
     dm_create_on: "{{ item }}" 
@@ -34,7 +29,6 @@
      path: "{{ brick_directory }}/gvol_{{ item }}"
      state: directory
   with_items:
-  #  - "{{ dm_create_on.value.holders }}"
     - "{{ groups.gluster_main[0] }}"
 
     
@@ -53,6 +47,5 @@
     path: "{{ brick_directory }}/gvol_{{ item }}/docker"
     state: directory
   with_items:
-  #  - "{{ dm_create_on.value.holders }}"
     - "{{ groups.gluster_main[0] }}"
 

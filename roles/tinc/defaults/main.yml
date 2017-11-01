@@ -10,3 +10,5 @@ vpn_subnet_cidr_netmask: 32
 
 # scw-metadata
 scw_private_domain: priv.cloud.scaleway.com
+
+api_floating_ip: 192.168.66.253
