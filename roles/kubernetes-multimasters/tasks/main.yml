@@ -137,6 +137,17 @@
       - inventory_hostname == groups["masters"][0]
       - inventory_hostname not in kubectl_output.stdout
 
+  # at this point ensure that kubedns is running before continue
+  - name: Be sure kubedns is running ok 
+  ¦ shell: 'kubectl get pods -n=kube-system | grep kube-dns'
+  ¦ register: result
+  ¦ until: result.stdout.find("3/3") != -1
+  ¦ retries: 18
+  ¦ delay: 10
+  ¦ # keepalived runs on masters nodes
+  ¦ when:
+  ¦ ¦ - "'masters' in group_names"
+
   - name: Creating .kube file in $HOME
     # this will be needed on all masters nodes
     file:
