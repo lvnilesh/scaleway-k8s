@@ -28,6 +28,7 @@
       src: tinc.conf.j2
       dest: /etc/tinc/{{ netname }}/tinc.conf
     notify:
+      - restart tinc
       - reload tinc
 
   - name: create tinc-up file

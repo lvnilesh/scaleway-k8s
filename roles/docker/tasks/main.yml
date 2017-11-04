@@ -5,6 +5,7 @@
   - name: Update all packages to the latest version
     apt:
       upgrade: dist
+      update_cache: yes
 
   - name: Ensure docker packages are not present
     apt:
@@ -73,7 +74,7 @@
       dest: /lib/systemd/system/docker.service
     notify:
       - reload systemd
-    when: "'workers' in group_names or 'masters' in group_names" 
+    when: inventory_hostname != groups['proxy'][0]
 
   - name: Flushing handlers
     meta: flush_handlers

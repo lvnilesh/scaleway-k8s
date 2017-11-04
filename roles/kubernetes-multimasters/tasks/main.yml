@@ -51,7 +51,7 @@
       restart_policy: always
     when: "'masters' in group_names"
 
-  - name: Wait for keepavlied to be alive :-)
+  - name: Wait for keepalived to be alive :-)
     shell: 'docker ps | grep chmod666/keepalived | grep "Up" | grep "minutes ago"'
     register: result
     until: result.stdout.find("chmod666/keepalived") != -1
@@ -60,6 +60,9 @@
     # keepalived runs on masters nodes
     when:
       - "'masters' in group_names"
+
+  # at this point everyone should be able to ping the api floating ip
+  # add a test here and don't continue until everyone does not ping the api ip
 
   - name: Adding Kubernetes official gpg key (without proxy)
     apt_key:
@@ -239,6 +242,11 @@
     when:
      - "'masters' not in group_names"
      - "'/usr/local/bin/kube-proxy' not in kube_proxy_running.stdout"
+
+  # remove this wait and had a test to check all nodes are ready
+  - name: Wait for all nodes to be ready
+    pause:
+      minutes: 5
 
   when:
     - ansible_distribution == "Ubuntu"

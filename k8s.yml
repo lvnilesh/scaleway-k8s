@@ -23,7 +23,7 @@
     - meta: flush_handlers
 
 # Setting up apt-proxy on master and workers (private ips)
-- hosts: masters:workers
+- hosts: proxy:masters:workers
   roles:
     - apt-proxy
 
@@ -65,9 +65,9 @@
   roles:
     - kubernetes-multimasters
 
-- hosts: gluster
-  roles:
-    - gluster
+#- hosts: gluster
+#  roles:
+#    - gluster
 
 # Deploying ingress controller and lego
 - hosts: masters:proxy
