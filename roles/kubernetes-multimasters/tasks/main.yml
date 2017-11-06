@@ -131,22 +131,16 @@
 
   - name: Kubeadm init on first master
     shell: "kubeadm init --config /tmp/kubeadm_config"
+    register: kubeadm_output
     when:
       # only run this command if this is the fist master
       # and this one hasn't be initialized
       - inventory_hostname == groups["masters"][0]
       - inventory_hostname not in kubectl_output.stdout
 
-  # at this point ensure that kubedns is running before continue
-  - name: Be sure kubedns is running ok 
-  ¦ shell: 'kubectl get pods -n=kube-system | grep kube-dns'
-  ¦ register: result
-  ¦ until: result.stdout.find("3/3") != -1
-  ¦ retries: 18
-  ¦ delay: 10
-  ¦ # keepalived runs on masters nodes
-  ¦ when:
-  ¦ ¦ - "'masters' in group_names"
+  - name: Kubedadm output
+    debug: var=kubeadm_output
+    when: inventory_hostname == groups["masters"][0]
 
   - name: Creating .kube file in $HOME
     # this will be needed on all masters nodes
@@ -175,6 +169,7 @@
     when:
       - inventory_hostname == groups["masters"][0]
 
+
   # calico deployement
   - name: Getting calico manifest
     get_url:
@@ -199,6 +194,16 @@
       - inventory_hostname == groups["masters"][0]
       - calico_deployment.rc != 0
 
+  # at this point ensure that kubedns is running before continue
+  - name: Be sure kubedns is running ok 
+    shell: 'kubectl get pods -n=kube-system | grep kube-dns'
+    register: result
+    until: result.stdout.find("3/3") != -1
+    retries: 18
+    delay: 10
+    when: inventory_hostname == groups["masters"][0]
+
+  # the we create the other masters
   - name: Creating /etc/kubernetes to other masters
     file:
       path: /etc/kubernetes
@@ -250,16 +255,27 @@
 
   - name: Joining cluster on other nodes
     shell: "kubeadm join --token={{ hostvars[groups['masters'][0]]['kubeadm_token'].stdout }} {{ api_floating_ip }}:6443"
+    register: kubedadm_output
+    when:
+     - "'masters' not in group_names"
+     - "'/usr/local/bin/kube-proxy' not in kube_proxy_running.stdout"
+
+  - name: Kubedadm output
+    debug: var=kubeadm_outpout
     when:
      - "'masters' not in group_names"
      - "'/usr/local/bin/kube-proxy' not in kube_proxy_running.stdout"
 
   # remove this wait and had a test to check all nodes are ready
   - name: Wait for all nodes to be ready
-    pause:
-      minutes: 5
+    shell: "kubectl get nodes"
+    register: result
+    until: result.stdout.find("NotReady") == -1
+    retries: 200
+    delay: 10
+    when:
+     - inventory_hostname == groups['masters'][0]
 
   when:
     - ansible_distribution == "Ubuntu"
     - groups.masters|length > 1
-

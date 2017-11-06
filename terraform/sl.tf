@@ -69,5 +69,5 @@ output "proxy1_private_ips" {
 }
 
 output "public_ip" {
-  value = ["${scaleway_server.proxy1.*.public_ip}"]
+  value = ["${scaleway_server.proxy0.*.public_ip}"]
 }

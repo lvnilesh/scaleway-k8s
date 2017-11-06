@@ -42,7 +42,7 @@
     - meta: flush_handlers
 
 # Apt proxy now should use tinc ip
-- hosts: masters:workers
+- hosts: proxy:masters:workers
   roles:
     - apt-proxy
 

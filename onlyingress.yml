@@ -1,5 +1,5 @@
 # Deploying ingress controller
-- hosts: proxy
+- hosts: masters
   roles:
     - ingress
     - lego

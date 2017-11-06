@@ -118,6 +118,13 @@
       enabled: yes
       state: started
 
+  - name: ensure tun0 is here
+    shell: "ip a s"
+    register: result
+    until: result.stdout.find("tun0") != -1
+    retries: 200
+    delay: 10
+
   - name: add nodes to /etc/hosts (ansible_inventory resolves to vpn_ip)
     lineinfile: dest=/etc/hosts regexp='.*{{ item }}$' line="{{ hostvars[item].vpn_ip }} {{item}}" state=present
     when: hostvars[item].vpn_ip is defined

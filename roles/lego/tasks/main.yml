@@ -4,7 +4,6 @@
     src: "{{ item }}"
     dest: "/tmp/{{ item | regex_replace('.j2', '') }}"
   with_items:
-    - lego-namespace.yml.j2
     - lego-sa.yml.j2
     - lego-clusterolebinding.yml.j2
     - lego-clusterole.yml.j2
@@ -19,7 +18,6 @@
     filename: "{{ item.file }}"
     state: latest
   with_items:
-    - { 'name': 'kube-lego', 'type': 'namespace', 'file': '/tmp/lego-namespace.yml' }
     - { 'name': 'kube-lego', 'type': 'sa', 'file': '/tmp/lego-sa.yml' }
     - { 'name': 'kube-lego', 'type': 'clusterrolebingind', 'file': '/tmp/lego-clusterolebinding.yml' }
     - { 'name': 'kube-lego', 'type': 'clusterrole', 'file': '/tmp/lego-clusterole.yml' }
