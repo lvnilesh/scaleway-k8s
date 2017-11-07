@@ -15,7 +15,7 @@ variable "master_instance_type" {
 }
 
 variable "master_instance_count" {
-  default = 3
+  default = 2
 }
 
 variable "proxy_instance_type" {
@@ -31,5 +31,5 @@ variable "worker_volume_size" {
 }
 
 variable "worker_instance_count" {
-  default = 3
+  default = 1
 }

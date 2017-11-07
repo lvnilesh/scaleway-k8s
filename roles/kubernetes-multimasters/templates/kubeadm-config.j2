@@ -8,7 +8,7 @@ etcd:
   - "http://{{ hostvars[host]['vpn_ip'] }}:2379"
 {% endfor %}
 networking:
-  podSubnet: "{{ calico_cidr }}"
+  podSubnet: "{{ flannel_cidr }}"
 kubernetesVersion: "{{ kubernetes_version }}"
 apiServerCertSANs:
 {% for host in groups['masters'] %}

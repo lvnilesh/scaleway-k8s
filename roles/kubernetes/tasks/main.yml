@@ -2,6 +2,10 @@
 - name: Kubernetes installation
   block:
 
+  - name: Fixing nasty bug
+    shell: "iptables -P FORWARD ACCEPT"
+    ignore_errors: True
+
   - name: Adding Kubernetes official gpg key (without proxy)
     apt_key:
       url: "{{ kubernetes_apt_key }}"

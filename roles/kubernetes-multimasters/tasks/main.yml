@@ -2,6 +2,18 @@
 - name: kubernetes multimasters
   block:
 
+  - name: modprobe
+    modprobe:
+      name: "{{ item }}"
+      state: present
+    with_items:
+      - ip_vs
+      - nf_conntrack_ipv4
+
+  - name: Fixing nasty bug
+    shell: "iptables -P FORWARD ACCEPT"
+    ignore_errors: True
+
   # ssh key sharing between first and other masters
   - name: Creates an ssh key on first master
     shell: ssh-keygen -b 2048 -t rsa -f /root/.ssh/id_rsa -q -N ""
@@ -173,8 +185,8 @@
   # calico deployement
   - name: Getting calico manifest
     get_url:
-      url: "{{ calico_manifest }}"
-      dest: /tmp/calico.yml
+      url: "{{ flannel_manifest }}"
+      dest: /tmp/flannel.yml
     environment:
       # calico manifest is downloaded via http
       http_proxy: "http://{{ hostvars[groups['proxy'][0]]['ansible_tun0']['ipv4']['address'] }}:8888"
@@ -183,13 +195,13 @@
       - inventory_hostname == groups["masters"][0]
 
   - name: Checking if calico deploy exists
-    shell: "kubectl get deploy --namespace=kube-system  calico-policy-controller"
+    shell: "kubectl get deploy --namespace=kube-system  flannel"
     ignore_errors: True
     register: calico_deployment
     when: inventory_hostname == groups["masters"][0]
 
   - name: Creating calico
-    shell: "kubectl create -f /tmp/calico.yml"
+    shell: "kubectl create -f /tmp/flannel.yml"
     when:
       - inventory_hostname == groups["masters"][0]
       - calico_deployment.rc != 0
