@@ -74,3 +74,4 @@
   roles:
     - ingress
     - lego
+    - kubernetes-dashardboard

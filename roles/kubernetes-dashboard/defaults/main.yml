@@ -1,0 +1,6 @@
+---
+domain_name: voight-kampff.org
+dashboard_image: gcr.io/google_containers/kubernetes-dashboard-amd64
+dashboard_version: v1.7.1
+init_dashboard_image: gcr.io/google_containers/kubernetes-dashboard-init-amd64
+init_dashboard_version: v1.0.1

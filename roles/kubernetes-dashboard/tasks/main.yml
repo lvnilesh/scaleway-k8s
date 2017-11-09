@@ -1,0 +1,52 @@
+---
+- name: Templating manifests
+  template: 
+    src: "{{ item }}"
+    dest: "/tmp/{{ item | regex_replace('.j2', '') }}"
+  with_items:
+    - dashboard-ingress.yml.j2
+    - dashboard-deployment.yml.j2
+  when: inventory_hostname == groups["masters"][0]
+
+- name: Copying manifests files
+  copy:
+    src: "{{ item }}"
+    dest: "/tmp/{{ item }}"
+  with_items:
+    - dashboard-rolebinding.yml
+    - dashboard-role.yml
+    - dashboard-sa.yml
+    - dashboard-secret.yml
+    - dashboard-service.yml
+  when: inventory_hostname == groups["masters"][0]
+
+- name: Deploying kubernetes-dashboard 
+  kube:
+    name: "{{ item.name }}"
+    resource: "{{ item.type }}"
+    filename: "{{ item.file }}"
+    state: latest
+  with_items:
+    - { 'name': 'kubernetes-dashboard', 'type': 'sa', 'file': '/tmp/dashboard-sa.yml' }
+    - { 'name': 'kubernetes-dashboard', 'type': 'clusterrolebingind', 'file': '/tmp/dashboard-rolebinding.yml' }
+    - { 'name': 'kubernetes-dashboard', 'type': 'clusterrole', 'file': '/tmp/dashboard-role.yml' }
+    - { 'name': 'kubernetes-dashboard', 'type': 'secret', 'file': '/tmp/dashboard-secret.yml' }
+    - { 'name': 'kubernetes-dashboard', 'type': 'service', 'file': '/tmp/dashboard-service.yml' }
+    - { 'name': 'kubernetes-dashboard', 'type': 'deployment', 'file': '/tmp/dashboard-deployment.yml' }
+    - { 'name': 'kubernetes-dashboard', 'type': 'ingress', 'file': '/tmp/dashboard-ingress.yml' }
+  when: inventory_hostname == groups["masters"][0]
+
+- name: Removing manifest
+  file:
+    path: "/tmp/{{ item }}"
+    state: absent
+  with_items:
+    - dashboard-ingress.yml.j2
+    - dashboard-deployment.yml.j2
+    - dashboard-rolebinding.yml
+    - dashboard-role.yml
+    - dashboard-sa.yml
+    - dashboard-secret.yml
+    - dashboard-service.yml
+  when: inventory_hostname == groups["masters"][0]
+

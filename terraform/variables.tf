@@ -31,5 +31,5 @@ variable "worker_volume_size" {
 }
 
 variable "worker_instance_count" {
-  default = 1
+  default = 2
 }

@@ -1,0 +1,22 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: kubernetes-dashbaord
+  annotations:
+    # enable kube-lego for this ingress
+    kubernetes.io/tls-acme: "true"
+   namespace: kube-system
+spec:
+  # this enables tls for the specified domain names
+  tls:
+  - hosts:
+    - k8sdashboard.{{ domain_name }}
+    secretName: dashboard-tls
+  rules:
+  - host: k8sdashboard.{{ domain_name }}
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: kubernetes-dashboard
+          servicePort: 443
