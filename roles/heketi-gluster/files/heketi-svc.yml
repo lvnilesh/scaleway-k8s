@@ -1,0 +1,18 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: deploy-heketi
+  labels:
+    glusterfs: heketi-service
+    deploy-heketi: service
+  annotations:
+    description: Exposes Heketi Service
+spec:
+  selector:
+    deploy-heketi: pod
+  type: NodePort
+  ports:
+  - name: deploy-heketi
+    port: 8080
+    targetPort: 8080
+    nodePort: 30001

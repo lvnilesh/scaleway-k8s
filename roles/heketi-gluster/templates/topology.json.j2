@@ -1,0 +1,26 @@
+{
+  "clusters": [
+    {
+    "nodes": [
+      {% for host in groups['workers'] %}
+              {
+          "node": {
+            "hostnames": {
+              "manage": [
+                "{{ hostvars[host]['vpn_ip'] }}"
+              ],
+              "storage": [
+                "{{ hostvars[host]['vpn_ip'] }}"
+              ]
+            },
+            "zone": 1
+          },
+          "devices": [
+            "/dev/vdb"
+          ]
+        }{% if not loop.last %},{% endif %}
+        {% endfor %}
+      ]
+    }
+  ]
+}

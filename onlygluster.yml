@@ -3,6 +3,6 @@
 - hosts: proxy:masters:workers
   tasks: [ ]
 
-- hosts: workers
+- hosts: proxy:masters:workers
   roles:
-    - gluster
+    - heketi-gluster

@@ -1,0 +1,148 @@
+---
+- name: Installing Heketi on master nodes
+  get_url:
+    url: "{{ heketi_sources }}"
+    dest: /tmp/heketi.tar.gz
+  environment:
+    http_proxy: "http://{{ hostvars[groups['proxy'][0]]['ansible_tun0']['ipv4']['address'] }}:8888"
+    https_proxy: "http://{{ hostvars[groups['proxy'][0]]['ansible_tun0']['ipv4']['address'] }}:8888"
+  when: "'masters' in group_names"
+
+- name: Unarchive Heketi
+  unarchive:
+    src: /tmp/heketi.tar.gz
+    dest: /usr/share
+    remote_src: yes
+  when: "'masters' in group_names"
+
+- name: Deleting Heketi archive
+  file:
+    path: /tmp/heketi.tar.gz
+    state: absent
+  when: "'masters' in group_names"
+
+- name: Getting Heketi version
+  command: /usr/share/heketi-client/bin/heketi-cli -v
+  register: heketi_version
+  when: "'masters' in group_names"
+
+- name: Printing Heketi version
+  debug: var=heketi_version
+  when: "'masters' in group_names"
+
+- name: Creating gluster and heketi needed directory on workers nodes
+  file:
+    path: "{{ item }}"
+    state: directory
+  with_items:
+    - /etc/glusterfs
+    - /var/lib/misc/glusterfsd
+    - /var/lib/heketi
+    - /var/lib/glusterd
+    - /var/log/glusterfs
+  when: "'workers' in group_names"
+
+- name: Getting node labels
+  command: "kubectl get nodes -l storagenode=glusterfs"
+  register: nodes_gluster
+  when: inventory_hostname == groups["masters"][0]
+
+- name: Printing nodes
+  debug: var=nodes_gluster
+  when: inventory_hostname == groups["masters"][0]
+
+- name: Labelling workers nodes with storagenode=glusterfs
+  command: "kubectl label node {{ item }} storagenode=glusterfs"
+  with_items:
+    - "{{ groups['workers'] }}"
+  when:
+    - inventory_hostname == groups["masters"][0]
+    - '"{{ item }}" not in nodes_gluster.stdout'
+
+- name: Copying manifests files
+  copy:
+    src: "glusterfs-daemonset.yml"
+    dest: "/tmp/glusterfs-daemonset.yml"
+  when: inventory_hostname == groups["masters"][0]
+
+- name: Deploying glusterfs
+  kube:
+    name: "glusterfs"
+    resource: "ds"
+    filename: "/tmp/glusterfs-daemonset.yml"
+    state: latest
+  when: inventory_hostname == groups["masters"][0]
+
+- name: Removing manifest
+  file:
+    path: "/tmp/gluster-daemonset.yml"
+    state: absent
+  when: inventory_hostname == groups["masters"][0]
+
+- name: Getting secrets
+  command: kubectl get secrets
+  register: secrets
+  when:
+    - inventory_hostname == groups["masters"][0]
+
+- name: Copying manifests heketi.json 
+  copy:
+    src: "heketi.json"
+    dest: "/tmp/heketi.json"
+  when: inventory_hostname == groups["masters"][0]
+
+- name: Creating secret
+  command: kubectl create secret generic heketi-config-secret --from-file=/tmp/heketi.json
+  when:
+    - inventory_hostname == groups["masters"][0]
+    - '"heketi-config-secret" not in secrets.stdout'
+
+- name: Deleting heekti.json
+  file:
+    path: /tmp/heketi.json
+    state: absent
+  when: inventory_hostname == groups["masters"][0]
+
+- name: Copying manifests files
+  copy:
+    src: "{{ item }}"
+    dest: "/tmp/{{ item }}"
+  with_items:
+    - heketi-sa.yml
+    - heketi-svc.yml
+    - heketi-deployment.yml
+  when: inventory_hostname == groups["masters"][0]
+
+- name: Deploying Heketi
+  kube:
+    name: "{{ item.name }}"
+    resource: "{{ item.resource }}"
+    filename: "{{ item.filename }}"
+    state: latest
+  with_items:
+    - { 'name': 'heketi', 'resource': 'sa', 'filename': '/tmp/heketi-sa.yml' }
+    - { 'name': 'heketi', 'resource': 'deploy', 'filename': '/tmp/heketi-deployment.yml' }
+    - { 'name': 'heketi', 'resource': 'svc', 'filename': '/tmp/heketi-svc.yml' }
+  when: inventory_hostname == groups["masters"][0]
+
+- name: Removing manifest
+  file:
+    path: "/tmp/{{ item }}"
+    state: absent
+  with_items:
+    - heketi-sa.yml
+    - heketi-deployment.yml
+    - heketi-svc.yml
+  when: inventory_hostname == groups["masters"][0]
+
+- name: Templating gluster topology
+  template:
+    src: "topology.json.j2"
+    dest: "/tmp/topology.json"
+  when: inventory_hostname == groups["masters"][0]
+
+- name: Creating topology
+  command: /usr/share/heketi-client/bin/heketi-cli topology load --json=/tmp/topology.json
+  environment:
+    - HEKETI_CLI_SERVER: 'http://{{ vpn_ip }}:30001'
+  when: inventory_hostname == groups["masters"][0]
