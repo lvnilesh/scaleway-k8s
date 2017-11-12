@@ -18,6 +18,12 @@
     - dashboard-sa.yml
     - dashboard-secret.yml
     - dashboard-service.yml
+    - heapster-rolebinding.yml
+    - heapster-clusterrolebinding.yml
+    - heapster-role.yml
+    - heapster-sa.yml
+    - heapster-service.yml
+    - heapster-deployment.yml
   when: inventory_hostname == groups["masters"][0]
 
 - name: Deploying kubernetes-dashboard 
@@ -28,12 +34,18 @@
     state: latest
   with_items:
     - { 'name': 'kubernetes-dashboard', 'type': 'sa', 'file': '/tmp/dashboard-sa.yml' }
-    - { 'name': 'kubernetes-dashboard', 'type': 'clusterrolebingind', 'file': '/tmp/dashboard-rolebinding.yml' }
+    - { 'name': 'kubernetes-dashboard', 'type': 'clusterrolebinding', 'file': '/tmp/dashboard-rolebinding.yml' }
     - { 'name': 'kubernetes-dashboard', 'type': 'clusterrole', 'file': '/tmp/dashboard-role.yml' }
     - { 'name': 'kubernetes-dashboard', 'type': 'secret', 'file': '/tmp/dashboard-secret.yml' }
     - { 'name': 'kubernetes-dashboard', 'type': 'service', 'file': '/tmp/dashboard-service.yml' }
     - { 'name': 'kubernetes-dashboard', 'type': 'deployment', 'file': '/tmp/dashboard-deployment.yml' }
     - { 'name': 'kubernetes-dashboard', 'type': 'ingress', 'file': '/tmp/dashboard-ingress.yml' }
+    - { 'name': 'heapster', 'type': 'sa', 'file': '/tmp/heapster-sa.yml' }
+    - { 'name': 'heapster', 'type': 'clusterrolebinding', 'file': '/tmp/heapster-clusterrolebinding.yml' }
+    - { 'name': 'heapster', 'type': 'rolebinding', 'file': '/tmp/heapster-rolebinding.yml' }
+    - { 'name': 'heapster', 'type': 'role', 'file': '/tmp/heapster-role.yml' }
+    - { 'name': 'heapster', 'type': 'service', 'file': '/tmp/heapster-service.yml' }
+    - { 'name': 'heapster', 'type': 'deployment', 'file': '/tmp/heapster-deployment.yml' }
   when: inventory_hostname == groups["masters"][0]
 
 - name: Removing manifest
@@ -48,5 +60,10 @@
     - dashboard-sa.yml
     - dashboard-secret.yml
     - dashboard-service.yml
+    - heapster-rolebinding.yml
+    - heapster-clusterrolebinding.yml
+    - heapster-role.yml
+    - heapster-sa.yml
+    - heapster-service.yml
+    - heapster-deployment.yml
   when: inventory_hostname == groups["masters"][0]
-
