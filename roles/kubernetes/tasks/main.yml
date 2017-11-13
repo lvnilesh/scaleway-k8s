@@ -53,7 +53,6 @@
     shell: "kubeadm init --apiserver-advertise-address={{ vpn_ip }} --pod-network-cidr={{ calico_cidr }} --kubernetes-version {{ kubernetes_version }}"
     when:
       - inventory_hostname == groups["masters"][0]
-      - kubernetes_directory.stat.exists == False
 
   - name: Creating .kube file in $HOME
     file:

@@ -1,4 +1,11 @@
 ---
+- name: modprobe
+  modprobe:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - dm_thin_pool
+
 - name: Installing Heketi on master nodes
   get_url:
     url: "{{ heketi_sources }}"
@@ -109,6 +116,7 @@
     dest: "/tmp/{{ item }}"
   with_items:
     - heketi-sa.yml
+    - heketi-clusterrolebinding.yml
     - heketi-svc.yml
     - heketi-deployment.yml
   when: inventory_hostname == groups["masters"][0]
@@ -121,6 +129,7 @@
     state: latest
   with_items:
     - { 'name': 'heketi', 'resource': 'sa', 'filename': '/tmp/heketi-sa.yml' }
+    - { 'name': 'heketi', 'resource': 'clusterrolebinding', 'filename': '/tmp/heketi-clusterrolebinding.yml' }
     - { 'name': 'heketi', 'resource': 'deploy', 'filename': '/tmp/heketi-deployment.yml' }
     - { 'name': 'heketi', 'resource': 'svc', 'filename': '/tmp/heketi-svc.yml' }
   when: inventory_hostname == groups["masters"][0]
@@ -133,6 +142,8 @@
     - heketi-sa.yml
     - heketi-deployment.yml
     - heketi-svc.yml
+    - heketi-clusterrole.yml
+    - heketi-clusterrolebinding.yml
   when: inventory_hostname == groups["masters"][0]
 
 - name: Templating gluster topology
@@ -141,8 +152,40 @@
     dest: "/tmp/topology.json"
   when: inventory_hostname == groups["masters"][0]
 
+- name: Pausing
+  pause:
+    minutes: 2
+  when: inventory_hostname == groups["masters"][0]
+
+- name: Getting number of nodes in the gluster
+  shell: "/usr/share/heketi-client/bin/heketi-cli node list | wc -l"
+  register: number_of_nodes
+  ignore_errors: True
+  when: inventory_hostname == groups["masters"][0]
+
 - name: Creating topology
   command: /usr/share/heketi-client/bin/heketi-cli topology load --json=/tmp/topology.json
+  register: heketi_topo
+  ignore_errors: True
+  environment:
+    - HEKETI_CLI_SERVER: 'http://{{ vpn_ip }}:30001'
+  when:
+    - inventory_hostname == groups["masters"][0]
+    #- number_of_nodes.stdout < groups.workers|length
+
+- name: Getting topology output
+  debug: var=heketi_topo
+  when: inventory_hostname == groups["masters"][0]
+
+- name: setup-openshift-heketi-storage
+  command: /usr/share/heketi-client/bin/heketi-cli setup-openshift-heketi-storage
+  register: setup-openshift-heketi-storage
   environment:
     - HEKETI_CLI_SERVER: 'http://{{ vpn_ip }}:30001'
   when: inventory_hostname == groups["masters"][0]
+
+- name: Getting setup-openshift-heketi-storage
+  debug: var=setup-openshift-heketi-storage
+  when: inventory_hostname == groups["masters"][0]
+
+  

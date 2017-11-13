@@ -44,13 +44,13 @@ resource "scaleway_server" "proxy0" {
   tags  = ["proxy","primary"]
 }
 
-resource "scaleway_server" "proxy1" {
+/*resource "scaleway_server" "proxy1" {
   name  = "proxy1"
   image = "${data.scaleway_image.ubuntu.id}"
   type  = "${var.proxy_instance_type}"
   state  = "started"
   tags  = ["proxy","secondary"]
-}
+}*/
 
 output "worker_private_ips" {
   value = ["${scaleway_server.worker.*.private_ips}"]
@@ -61,12 +61,12 @@ output "master_private_ips" {
 }
 
 output "proxy0_private_ips" {
-  value = ["${scaleway_server.proxy1.*.private_ips}"]
+  value = ["${scaleway_server.proxy0.*.private_ips}"]
 }
 
-output "proxy1_private_ips" {
+/*output "proxy1_private_ips" {
   value = ["${scaleway_server.proxy1.*.private_ips}"]
-}
+}*/
 
 output "public_ip" {
   value = ["${scaleway_server.proxy0.*.public_ip}"]

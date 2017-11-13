@@ -7,7 +7,7 @@
           "node": {
             "hostnames": {
               "manage": [
-                "{{ hostvars[host]['vpn_ip'] }}"
+                "{{ hostvars[host]['ansible_hostname'] }}"
               ],
               "storage": [
                 "{{ hostvars[host]['vpn_ip'] }}"
