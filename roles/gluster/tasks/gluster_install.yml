@@ -1,7 +1,0 @@
----
-- name: Installing gluster packages
-  apt:
-    name: "{{ item }}"
-    state: latest
-  with_items:
-    - "{{ gluster_packages }}" 

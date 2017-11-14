@@ -1,1 +1,0 @@
-gluster volume create gvol_{{ item }} replica 2 transport tcp {% for host in groups.gluster_nodes %} {{ host }}:{{ brick_directory }}/gvol_{{ item }}/k8s {% endfor %} force

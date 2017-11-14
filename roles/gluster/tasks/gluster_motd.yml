@@ -1,5 +1,0 @@
-- name: Modifying motd
-  blockinfile:
-    block: "{{ lookup('template', 'templates/motd_gluster.j2') }}"
-    insertafter: EOF
-    dest: "/etc/motd"

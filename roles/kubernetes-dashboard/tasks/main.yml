@@ -51,6 +51,7 @@
     - dashboard-rolebinding.yml
     - dashboard-role.yml
     - dashboard-sa.yml
+    - dashboard-clusterrolebinding.yml
     - dashboard-secret.yml
     - dashboard-service.yml
     - heapster-rolebinding.yml
@@ -69,8 +70,8 @@
     state: latest
   with_items:
     - { 'name': 'kubernetes-dashboard', 'type': 'sa', 'file': '/tmp/dashboard-sa.yml' }
-    - { 'name': 'kubernetes-dashboard', 'type': 'clusterrolebinding', 'file': '/tmp/dashboard-rolebinding.yml' }
-    - { 'name': 'kubernetes-dashboard', 'type': 'clusterrole', 'file': '/tmp/dashboard-role.yml' }
+    - { 'name': 'kubernetes-dashboard', 'type': 'clusterrolebinding', 'file': '/tmp/dashboard-clusterrolebinding.yml' }
+    #- { 'name': 'kubernetes-dashboard', 'type': 'clusterrole', 'file': '/tmp/dashboard-role.yml' }
     - { 'name': 'kubernetes-dashboard', 'type': 'secret', 'file': '/tmp/dashboard-secret.yml' }
     - { 'name': 'kubernetes-dashboard', 'type': 'service', 'file': '/tmp/dashboard-service.yml' }
     - { 'name': 'kubernetes-dashboard', 'type': 'deployment', 'file': '/tmp/dashboard-deployment.yml' }
@@ -90,6 +91,7 @@
   with_items:
     - dashboard-ingress.yml.j2
     - dashboard-deployment.yml.j2
+    - dashboard-clusterrolebinding.yml
     - dashboard-rolebinding.yml
     - dashboard-role.yml
     - dashboard-sa.yml

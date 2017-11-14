@@ -1,6 +1,0 @@
-gluster_packages:
-  - glusterfs-server
-  - userspace-rcu
-  - parted
-gluster_disk_size: 50
-brick_directory: /data/brick

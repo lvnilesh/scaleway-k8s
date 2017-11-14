@@ -181,8 +181,7 @@
     when:
       - inventory_hostname == groups["masters"][0]
 
-
-  # calico deployement
+  # flannel deployement
   - name: Getting calico manifest
     get_url:
       url: "{{ flannel_manifest }}"
@@ -194,13 +193,13 @@
     when:
       - inventory_hostname == groups["masters"][0]
 
-  - name: Checking if calico deploy exists
+  - name: Checking if flannel deploy exists
     shell: "kubectl get deploy --namespace=kube-system  flannel"
     ignore_errors: True
     register: calico_deployment
     when: inventory_hostname == groups["masters"][0]
 
-  - name: Creating calico
+  - name: Creating flannel
     shell: "kubectl create -f /tmp/flannel.yml"
     when:
       - inventory_hostname == groups["masters"][0]

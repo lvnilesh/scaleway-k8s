@@ -1,4 +1,12 @@
 ---
+- name: Installing glusterfs.client and jq
+  apt:
+    name: "{{ item }}"
+    state: latest
+  with_items:
+    - glusterfs-client
+    - jq
+
 - name: modprobe
   modprobe:
     name: "{{ item }}"
@@ -154,14 +162,27 @@
 
 - name: Pausing
   pause:
-    minutes: 2
-  when: inventory_hostname == groups["masters"][0]
+    minutes: 3
 
 - name: Getting number of nodes in the gluster
   shell: "/usr/share/heketi-client/bin/heketi-cli node list | wc -l"
   register: number_of_nodes
   ignore_errors: True
+  environment:
+    - HEKETI_CLI_SERVER: 'http://{{ vpn_ip }}:30001'
   when: inventory_hostname == groups["masters"][0]
+
+- name: Printing number of nodes in the gluster
+  debug: var=number_of_nodes.stdout
+  when: inventory_hostname == groups["masters"][0]
+
+- name: Printing number of workers
+  debug: var=groups.workers|length
+  when: inventory_hostname == groups["masters"][0]
+
+- name: Pausing
+  pause:
+    minutes: 3
 
 - name: Creating topology
   command: /usr/share/heketi-client/bin/heketi-cli topology load --json=/tmp/topology.json
@@ -171,10 +192,16 @@
     - HEKETI_CLI_SERVER: 'http://{{ vpn_ip }}:30001'
   when:
     - inventory_hostname == groups["masters"][0]
-    #- number_of_nodes.stdout < groups.workers|length
+    - number_of_nodes.stdout|int < groups.workers|length
 
 - name: Getting topology output
   debug: var=heketi_topo
+  when: inventory_hostname == groups["masters"][0]
+
+- name: Stating heketi-storage.json
+  stat:
+    path: /root/heketi-storage.json
+  register: heketistoragefile
   when: inventory_hostname == groups["masters"][0]
 
 - name: setup-openshift-heketi-storage
@@ -182,10 +209,92 @@
   register: setup-openshift-heketi-storage
   environment:
     - HEKETI_CLI_SERVER: 'http://{{ vpn_ip }}:30001'
-  when: inventory_hostname == groups["masters"][0]
+  when:
+    - inventory_hostname == groups["masters"][0]
+    - heketistoragefile.stat.exists == False
 
 - name: Getting setup-openshift-heketi-storage
   debug: var=setup-openshift-heketi-storage
+  when:
+    - inventory_hostname == groups["masters"][0]
+    - heketistoragefile.stat.exists == False
+
+- name: Applying heketi-storage.json
+  command: kubectl apply -f /root/heketi-storage.json
+  register: heketistoragekubectl
+  when:
+    - inventory_hostname == groups["masters"][0]
+    - heketistoragefile.stat.exists == True
+
+- name: Getting heketi-storage output
+  debug: var=heketistoragekubectl
+  when:
+    - inventory_hostname == groups["masters"][0]
+
+- name: Wait for heketi job to finish
+  shell: "kubectl get jobs heketi-storage-copy-job | tail -1 | awk '{print $2}'"
+  register: result
+  until: result.stdout|int == 1
+  retries: 200
+  delay: 10
+  when:
+    - inventory_hostname == groups["masters"][0]
+
+- name: Deleting temporary heketi
+  command: kubectl delete all,service,jobs,deployment,secret --selector="deploy-heketi"
+  ignore_errors: True
+  when:
+    - inventory_hostname == groups["masters"][0]
+
+- name: Copying manifests files
+  copy:
+    src: "{{ item }}"
+    dest: "/tmp/{{ item }}"
+  with_items:
+    - heketi-deploy.yml
+    - heketi-deploy-svc.yml
   when: inventory_hostname == groups["masters"][0]
 
-  
+- name: Deploying Heketi
+  kube:
+    name: "{{ item.name }}"
+    resource: "{{ item.resource }}"
+    filename: "{{ item.filename }}"
+    state: latest
+  with_items:
+    - { 'name': 'heketi', 'resource': 'deploy', 'filename': '/tmp/heketi-deploy.yml' }
+    - { 'name': 'heketi', 'resource': 'svc', 'filename': '/tmp/heketi-deploy-svc.yml' }
+  when: inventory_hostname == groups["masters"][0]
+
+- name: Removing manifest
+  file:
+    path: "/tmp/{{ item }}"
+    state: absent
+  with_items:
+    - heketi-deploy.yml
+    - heketi-deploy-svc.yml
+  when: inventory_hostname == groups["masters"][0]
+
+- name: Getting heketi ClusterIP to configure storageclass
+  shell: "kubectl get svc heketi -o json | jq -r  '.spec.clusterIP'"
+  register: heketi_ip
+  when: inventory_hostname == groups["masters"][0]
+
+- name: Templating storage class
+  template:
+     src: heketi-storageclass.yml.j2
+     dest: /tmp/heketi-storageclass.yml
+  when: inventory_hostname == groups["masters"][0]
+
+- name: Creating gluster storageclass
+  kube:
+    name: "gluster"
+    resource: "storageclass"
+    filename: "/tmp/heketi-storageclass.yml"
+  when: inventory_hostname == groups["masters"][0]
+
+- name: Removing manifest
+  file:
+    path: "/tmp/heketi-storageclass.yml"
+    state: absent
+  when: inventory_hostname == groups["masters"][0]
