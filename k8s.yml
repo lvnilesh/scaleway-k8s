@@ -65,13 +65,14 @@
   roles:
     - kubernetes-multimasters
 
-#- hosts: gluster
-#  roles:
-#    - gluster
-
-# Deploying ingress controller and lego
+# Deploying ingress controller, lego, dashboard, and helm-monocular
 - hosts: masters:proxy
   roles:
     - ingress
     - lego
     - kubernetes-dashboard
+    #- helm-monocular
+
+- hosts: masters:proxy:workers
+  roles:
+    - heketi-gluster

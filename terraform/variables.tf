@@ -15,7 +15,7 @@ variable "master_instance_type" {
 }
 
 variable "master_instance_count" {
-  default = 1
+  default = 3
 }
 
 variable "proxy_instance_type" {

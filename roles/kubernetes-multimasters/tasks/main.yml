@@ -7,6 +7,14 @@
       name: "{{ item }}"
       state: present
     with_items:
+    - ip_vs
+    - nf_conntrack_ipv4
+
+  - name: /etc/modules dm_thin_pool
+    lineinfile:
+      path: /etc/modules
+      line: "{{ item }}"
+    with_items:
       - ip_vs
       - nf_conntrack_ipv4
 

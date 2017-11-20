@@ -14,6 +14,11 @@
   with_items:
     - dm_thin_pool
 
+- name: /etc/modules dm_thin_pool
+  lineinfile:
+    path: /etc/modules
+    line: 'dm_thin_pool'
+
 - name: Installing Heketi on master nodes
   get_url:
     url: "{{ heketi_sources }}"
