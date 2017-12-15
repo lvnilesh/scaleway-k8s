@@ -53,15 +53,15 @@ resource "scaleway_server" "proxy1" {
 }
 
 output "worker_private_ips" {
-  value = ["${scaleway_server.worker.*.private_ips}"]
+  value = ["${scaleway_server.worker.*.private_ip}"]
 }
 
 output "master_private_ips" {
-  value = ["${scaleway_server.master.*.private_ips}"]
+  value = ["${scaleway_server.master.*.private_ip}"]
 }
 
 output "proxy0_private_ips" {
-  value = ["${scaleway_server.proxy0.*.private_ips}"]
+  value = ["${scaleway_server.proxy0.*.private_ip}"]
 }
 
 output "public_ip" {
