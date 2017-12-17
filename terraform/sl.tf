@@ -16,7 +16,7 @@ resource "scaleway_server" "worker" {
   name   = "worker${count.index}"
   image  = "${data.scaleway_image.ubuntu.id}"
   type   = "${var.worker_instance_type}"
-  state  = "started"
+  state  = "running"
   tags   = ["workers"]
 
   volume {
@@ -30,7 +30,7 @@ resource "scaleway_server" "master" {
   name   = "master${count.index}"
   image  = "${data.scaleway_image.ubuntu.id}"
   type   = "${var.master_instance_type}"
-  state  = "started"
+  state  = "running"
   tags   = ["masters"]
 }
 
@@ -40,15 +40,16 @@ resource "scaleway_server" "proxy0" {
   image = "${data.scaleway_image.ubuntu.id}"
   type  = "${var.proxy_instance_type}"
   public_ip  = "${element(scaleway_ip.public_ip.*.ip, count.index)}"
-  state  = "started"
+  state  = "running"
   tags  = ["proxy","primary"]
 }
 
 resource "scaleway_server" "proxy1" {
+  count = 1
   name  = "proxy1"
   image = "${data.scaleway_image.ubuntu.id}"
   type  = "${var.proxy_instance_type}"
-  state  = "started"
+  state  = "running"
   tags  = ["proxy","secondary"]
 }
 
@@ -62,6 +63,10 @@ output "master_private_ips" {
 
 output "proxy0_private_ips" {
   value = ["${scaleway_server.proxy0.*.private_ip}"]
+}
+
+output "proxy1_private_ips" {
+  value = ["${scaleway_server.proxy1.*.private_ip}"]
 }
 
 output "public_ip" {
